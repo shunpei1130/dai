@@ -5,8 +5,8 @@
   <title>大富豪アプリ（4人対戦・友人＆CPU併用版）</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #2d862d;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(120deg, #2d862d, #145214);
       color: #fff;
       text-align: center;
       margin: 0;
@@ -19,7 +19,7 @@
       max-width: 900px;
       margin: 0 auto;
       padding: 10px;
-      background-color: #3e9c3e;
+      background: rgba(0,0,0,0.2);
       border-radius: 8px;
     }
     /* 各プレイヤーのエリア */
@@ -39,15 +39,23 @@
     .card {
       display: inline-block;
       margin: 3px;
-      padding: 8px;
+      width: 50px;
+      height: 70px;
+      line-height: 70px;
       background-color: #fff;
       color: #000;
       border: 2px solid #000;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      width: 40px;
       text-align: center;
       font-weight: bold;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.1);
+    }
+    .card.red {
+      color: #d00;
     }
     /* テーブルエリア */
     #tableArea {
@@ -55,10 +63,10 @@
       border-radius: 8px;
       margin: 10px auto;
       padding: 10px;
-      width: 200px;
+      width: 220px;
       font-size: 24px;
       font-weight: bold;
-      background-color: #4eaf4e;
+      background: rgba(255,255,255,0.2);
     }
     /* 操作用ボタン */
     #controls {
@@ -66,9 +74,15 @@
     }
     button {
       margin: 5px;
-      padding: 8px 16px;
+      padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      background-color: #fff;
+    }
+    button:hover {
+      background-color: #ddd;
     }
     #message {
       margin: 10px;
@@ -113,6 +127,8 @@
     let lastActivePlayer = -1; // 最後にカードを出したプレイヤーのインデックス
     let currentTurn = 0;      // 現在のターン（players配列のインデックス）
     let gameOver = false;
+    let shibariActive = false; // 縛り状態
+    let shibariSuit = null;
 
     /***** 初期化処理 *****/
     // デッキを作成しシャッフルする
@@ -168,6 +184,8 @@
       passCount = 0;
       lastActivePlayer = -1;
       currentTurn = 0;
+      shibariActive = false;
+      shibariSuit = null;
       initPlayers();
       initDeck();
       dealCards();
@@ -205,6 +223,7 @@
           p.hand.forEach((card, index) => {
             const cardDiv = document.createElement("div");
             cardDiv.className = "card";
+            if (card.suit === "♥" || card.suit === "♦") cardDiv.classList.add("red");
             cardDiv.textContent = cardToString(card);
             cardDiv.dataset.player = i;
             cardDiv.dataset.index = index;
@@ -225,6 +244,9 @@
       // テーブルエリア更新
       const tableDiv = document.getElementById("tableArea");
       tableDiv.textContent = "テーブル：" + (tableCard ? cardToString(tableCard) : "なし");
+      if (shibariActive) {
+        tableDiv.textContent += "　[縛り:" + shibariSuit + "]";
+      }
     }
 
     // カードを文字列に変換する関数
@@ -265,13 +287,38 @@
         setMessage("そのカードは出せません。テーブルより強いカードを選んでください。");
         return;
       }
+      if (shibariActive && card.suit !== shibariSuit) {
+        setMessage("現在は縛り中です。" + shibariSuit + "のカードを出してください。");
+        return;
+      }
       // カードを出す
+      const prevCard = tableCard;
       tableCard = card;
       lastActivePlayer = playerIndex;
       passCount = 0;  // 誰かがカードを出したのでパスはリセット
+      if (prevCard && prevCard.suit === card.suit) {
+        shibariActive = true;
+        shibariSuit = card.suit;
+      }
       // 手札から削除
       p.hand.splice(cardIndex, 1);
-      setMessage(p.name + "が " + cardToString(card) + " を出しました。");
+      let msg = p.name + "が " + cardToString(card) + " を出しました。";
+      if (card.value === 8) {
+        msg += " 8切り！";
+        tableCard = null;
+        shibariActive = false;
+        shibariSuit = null;
+        setMessage(msg);
+        renderAll();
+        socket.emit('gameEvent', { type: 'playCard', playerIndex, card });
+        if (p.hand.length === 0) {
+          endGame(p.name + "の勝利！");
+          return;
+        }
+        setTimeout(turnControl, 500);
+        return;
+      }
+      setMessage(msg);
       renderAll();
       // 自分の操作が行われたことをサーバーに通知
       socket.emit('gameEvent', { type: 'playCard', playerIndex, card });
@@ -298,17 +345,40 @@
       const p = players[playerIndex];
       // CPUの合法手：テーブルが空ならどのカードでも、そうでなければ card.value > tableCard.value
       const legalCards = p.hand.filter(card => {
-        return (tableCard === null) || (card.value > tableCard.value);
+        if (tableCard !== null && card.value <= tableCard.value) return false;
+        if (shibariActive && card.suit !== shibariSuit) return false;
+        return true;
       });
       if (legalCards.length > 0) {
         legalCards.sort((a, b) => a.value - b.value);
         const chosen = legalCards[0];
+        const prevCard = tableCard;
         tableCard = chosen;
         lastActivePlayer = playerIndex;
         passCount = 0;
+        if (prevCard && prevCard.suit === chosen.suit) {
+          shibariActive = true;
+          shibariSuit = chosen.suit;
+        }
         const idx = p.hand.findIndex(c => c.suit === chosen.suit && c.value === chosen.value);
         p.hand.splice(idx, 1);
-        setMessage(p.name + "が " + cardToString(chosen) + " を出しました。");
+        let msg = p.name + "が " + cardToString(chosen) + " を出しました。";
+        if (chosen.value === 8) {
+          msg += " 8切り！";
+          tableCard = null;
+          shibariActive = false;
+          shibariSuit = null;
+          setMessage(msg);
+          renderAll();
+          socket.emit('gameEvent', { type: 'playCard', playerIndex, card: chosen });
+          if (p.hand.length === 0) {
+            endGame(p.name + "の勝利！");
+            return;
+          }
+          setTimeout(turnControl, 500);
+          return;
+        }
+        setMessage(msg);
         socket.emit('gameEvent', { type: 'playCard', playerIndex, card: chosen });
       } else {
         setMessage(p.name + "はパスしました。");
@@ -330,6 +400,8 @@
         setMessage("全員がパスしました。ラウンドをリセットします。");
         tableCard = null;
         passCount = 0;
+        shibariActive = false;
+        shibariSuit = null;
         currentTurn = lastActivePlayer;
         renderAll();
         updateControls();
