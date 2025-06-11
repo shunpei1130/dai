@@ -4,8 +4,10 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-// クライアントファイルがあるフォルダ（例：public）を静的配信
-app.use(express.static('public'));
+// クライアントファイルを静的配信
+// 元のコードでは 'public' ディレクトリを参照していましたが、このリポジトリでは
+// index.html がルートに置かれているため、ルートを配信するようにします。
+app.use(express.static(__dirname));
 
 io.on('connection', (socket) => {
   console.log('ユーザー接続: ' + socket.id);

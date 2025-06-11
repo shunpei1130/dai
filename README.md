@@ -39,5 +39,5 @@ This repository contains a simple web-based card game written in HTML and JavaSc
 
 ## Notes
 
-`server.js` serves static files from a directory named `public`. If you change the directory structure, ensure that `index.html` is available under that path or modify the Express configuration accordingly.
+`server.js` serves static files from the repository root using `express.static(__dirname)`. If you relocate `index.html`, update `server.js` accordingly so the game can be loaded in the browser.
 
