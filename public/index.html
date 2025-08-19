@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>チンチロゲーム</title>
+</head>
+<body>
+  <h1>チンチロゲーム</h1>
+  <button id="roll">サイコロを振る</button>
+  <div>出目: <span id="dice">-</span></div>
+  <div>結果: <span id="result">-</span></div>
+
+  <script src="chinchiro.js"></script>
+  <script>
+    document.getElementById('roll').addEventListener('click', () => {
+      const dice = chinchiro.rollDice();
+      document.getElementById('dice').textContent = dice.join(', ');
+      const outcome = chinchiro.evaluateRoll(dice);
+      let message;
+      switch (outcome.type) {
+        case 'win':
+          message = '4-5-6! 勝ち';
+          break;
+        case 'lose':
+          message = '1-2-3... 負け';
+          break;
+        case 'triple':
+          message = `ゾロ目 ${outcome.value}`;
+          break;
+        case 'point':
+          message = `目: ${outcome.value}`;
+          break;
+        default:
+          message = '役なし';
+      }
+      document.getElementById('result').textContent = message;
+    });
+  </script>
+</body>
+</html>

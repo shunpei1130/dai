@@ -1,12 +1,12 @@
-# 大富豪アプリ (Daifugo Game)
+# チンチロアプリ (Chinchiro Game)
 
-This repository contains a simple web-based card game written in HTML and JavaScript with a Node.js backend. The game simulates "大富豪" (Daifugo or President) for up to four players and allows human and CPU players to play together.
+This repository contains a simple web-based dice game written in HTML and JavaScript with a Node.js backend. The game simulates "チンチロ" (Chinchirorin) where a player rolls three dice and the combination determines the outcome.
 
 ## Features
 
-- **Front‑end**: `index.html` implements the game board and logic entirely in the browser. The game supports human players and CPU-controlled opponents, turn management, and rules such as 8-cut and suit binding.
-- **Back‑end**: `server.js` uses Express and Socket.IO to deliver the client files and relay basic game events between connected clients.
-- **Test**: `test/basic.test.js` includes a small example test using the Node.js `test` module.
+- **Front‑end**: `public/index.html` implements the game board in the browser and uses `public/chinchiro.js` for dice rolling and evaluation.
+- **Back‑end**: `server.js` uses Express to deliver the client files.
+- **Test**: `test/basic.test.js` includes example tests for the dice evaluation logic using the Node.js `test` module.
 
 ## Getting Started
 
@@ -32,12 +32,9 @@ This repository contains a simple web-based card game written in HTML and JavaSc
 
 ## Files
 
-- `index.html` – front‑end implementation of the Daifugo game
-- `server.js` – Express/Socket.IO server for serving the game and handling messages
+- `public/index.html` – front‑end implementation of the Chinchiro game
+- `public/chinchiro.js` – dice roll and evaluation logic
+- `server.js` – Express server for serving the game
 - `package.json` – Node.js project metadata and dependencies
-- `test/basic.test.js` – example unit test
-
-## Notes
-
-`server.js` serves static files from a directory named `public`. If you change the directory structure, ensure that `index.html` is available under that path or modify the Express configuration accordingly.
+- `test/basic.test.js` – unit tests for game logic
 
