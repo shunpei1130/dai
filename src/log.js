@@ -8,6 +8,7 @@ function createLogId() {
 export function appendLog(state, entry) {
   const logEntry = {
     id: entry.id ?? createLogId(),
+
     type: entry.type,
     message: entry.message,
     payload: entry.payload ?? null,
