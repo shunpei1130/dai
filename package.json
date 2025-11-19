@@ -1,0 +1,18 @@
+{
+  "name": "dai",
+  "version": "1.0.0",
+  "description": "Core engine for a configurable Daifugo (Tycoon) game.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/sanity-check.js"
+  },
+  "keywords": [
+    "daifugo",
+    "tycoon",
+    "card-game",
+    "engine"
+  ],
+  "author": "",
+  "license": "MIT"
+}
