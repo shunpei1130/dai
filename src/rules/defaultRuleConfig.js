@@ -1,0 +1,75 @@
+export function createDefaultRuleConfig() {
+  return {
+    revolution: {
+      enabled: true,
+      normal: true,
+      stair: true,
+      stairMinLength: 3,
+      jokerRevolution: false,
+      nanaSan: false,
+      reversible: true,
+      selectableCoup: false,
+      omen: false,
+    },
+    stair: {
+      enabled: true,
+      minLength: 3,
+      maxLength: 5,
+      strengthBasis: 'highest',
+      emperor: false,
+    },
+    bind: {
+      enabled: false,
+      bindCount: 2,
+      maxBindStreak: null,
+      fierce: false,
+      both: false,
+      single: false,
+      numberOnly: false,
+    },
+    cutStop: {
+      cut8: true,
+      stop4: false,
+      sandStorm: false,
+      ambulance99: false,
+      rokuro: false,
+    },
+    backAndBan: {
+      back11: 'normal',
+      forbidLast2or3: false,
+      forbid8: false,
+      forbid11Back: false,
+      forbidJoker: false,
+      forbidSpade3: false,
+      spade3Return: false,
+    },
+    position: {
+      capitalFall: false,
+      gekokujou: false,
+    },
+    start: {
+      starter: 'spade3',
+      priority: 'cardOverRole',
+    },
+    joker: {
+      count: 1,
+      behavior: 'strongest',
+    },
+    turnPass: {
+      passLimit: null,
+      prohibitLastTwo: false,
+    },
+    etc: {
+      seatShuffle: 'none',
+      flowOnFinish: false,
+      tenpenchii: false,
+      downNumber: false,
+      sevenGive: false,
+      tenDiscard: false,
+      nineReverse: true,
+      twelveReverse: false,
+      fiveSkip: true,
+      thirteenSkip: false,
+    },
+  };
+}
