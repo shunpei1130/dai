@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "node scripts/sanity-check.js"
+    "test": "node scripts/sanity-check.js",
+    "dev": "node scripts/serve-web.js"
   },
   "keywords": [
     "daifugo",
