@@ -97,7 +97,7 @@ export const DEFAULT_RULES: RuleConfig = {
 
     sandstorm: true,
     ambulance: true,
-    qBomber: false,
+    qBomber: true,
 
     forbiddenFinish: true,
     forbiddenFinishCards: ['Joker', '2', '8'],

@@ -212,6 +212,35 @@ export const GameTable: React.FC<GameTableProps> = ({ rules, onGoHome }) => {
                 </div>
             </div>
 
+            {/* Q-Bomber Selector */}
+            {isMyTurn && gameState.pendingActionPlayerId === humanPlayer.id &&
+                gameState.pendingGiveCards === 0 && gameState.pendingDiscardCount === 0 && (
+                    <div className="absolute inset-0 z-40 bg-black/80 flex flex-col items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-slate-800 border border-slate-600 p-6 rounded-2xl max-w-lg w-full"
+                        >
+                            <h3 className="text-xl text-white font-bold text-center mb-4">💣 12ボンバー! 指定する番号を選んでください</h3>
+                            <div className="grid grid-cols-5 gap-2">
+                                {['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'].map(rank => (
+                                    <button
+                                        key={rank}
+                                        onClick={() => {
+                                            const engine = engineRef.current;
+                                            engine.executeQBomber(humanPlayer.id, rank as any, true);
+                                            setGameState({ ...engine.getState() });
+                                        }}
+                                        className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg border border-slate-500 transition-colors"
+                                    >
+                                        {rank}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
             {/* Status Indicators */}
             <div className="absolute top-2 right-2 z-20 flex gap-1.5 flex-wrap max-w-xs">
                 {effectiveRevolution && (
@@ -474,7 +503,9 @@ export const GameTable: React.FC<GameTableProps> = ({ rules, onGoHome }) => {
                                 ? `(${gameState.pendingGiveCards}枚渡して!)`
                                 : gameState.pendingDiscardCount > 0
                                     ? `(${gameState.pendingDiscardCount}枚捨てて!)`
-                                    : '(あなたのターン)'}
+                                    : (gameState.pendingActionPlayerId === humanPlayer.id)
+                                        ? '(12ボンバー!)'
+                                        : '(あなたのターン)'}
                         </motion.span>
                     )}
                 </div>

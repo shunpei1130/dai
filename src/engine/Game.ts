@@ -381,22 +381,6 @@ export class GameEngine {
         }
 
         // Advance turn based on effects
-        if (effects.clearPile) {
-            this.emitEffect('pile_clear', playerId);
-            this.clearPile();
-            if (player.hand.length === 0) {
-                this.advanceTurnToNextActive(playerId);
-            } else {
-                this.state.currentTurn = playerId;
-                this.state.players.forEach(p => p.hasPassed = false);
-            }
-        } else {
-            if (effects.skipCount > 0) {
-                this.state.skipCount = effects.skipCount;
-            }
-            this.advanceTurnToNext();
-        }
-
         // Handle 7-pass pending action
         if (effects.pendingGiveCards > 0 && player.hand.length > 0) {
             this.state.pendingGiveCards = effects.pendingGiveCards;
@@ -413,10 +397,31 @@ export class GameEngine {
         if (effects.pendingQBomber && player.hand.length >= 0) {
             // CPU auto-selects a random rank, human will need UI
             if (player.isCpu) {
-                this.executeQBomber(playerId, this.cpuSelectQBomberTarget(player));
+                this.executeQBomber(playerId, this.cpuSelectQBomberTarget(player), false);
             } else {
                 this.state.pendingQBomberRank = null; // Wait for player to declare
                 this.state.pendingActionPlayerId = playerId;
+            }
+        }
+
+        // Advance turn based on effects
+        if (effects.clearPile) {
+            this.emitEffect('pile_clear', playerId);
+            this.clearPile();
+            if (player.hand.length === 0) {
+                this.advanceTurnToNextActive(playerId);
+            } else {
+                this.state.currentTurn = playerId;
+                this.state.players.forEach(p => p.hasPassed = false);
+            }
+        } else {
+            if (effects.skipCount > 0) {
+                this.state.skipCount = effects.skipCount;
+            }
+
+            // Only advance if no pending action required
+            if (!this.state.pendingActionPlayerId) {
+                this.advanceTurnToNext();
             }
         }
 
@@ -424,7 +429,7 @@ export class GameEngine {
     }
 
     /** Execute Q-Bomber: all players discard cards of declared rank */
-    public executeQBomber(playerId: PlayerId, targetRank: Rank): GameState {
+    public executeQBomber(playerId: PlayerId, targetRank: Rank, advanceTurn: boolean = true): GameState {
         this.emitEffect('q_bomber', playerId, { targetRank });
         this.state.pendingQBomberRank = null;
         this.state.pendingActionPlayerId = null;
@@ -435,6 +440,10 @@ export class GameEngine {
             p.hand = p.hand.filter(c => c.rank !== targetRank);
             totalDiscarded += before - p.hand.length;
         });
+
+        if (advanceTurn) {
+            this.advanceTurnToNext();
+        }
 
         return { ...this.state };
     }
@@ -480,6 +489,7 @@ export class GameEngine {
             fromPlayer.score += RANK_SCORES[fromPlayer.rankTitle];
         }
 
+        this.advanceTurnToNext();
         return { ...this.state };
     }
 
@@ -503,6 +513,7 @@ export class GameEngine {
             player.score += RANK_SCORES[player.rankTitle];
         }
 
+        this.advanceTurnToNext();
         return { ...this.state };
     }
 
@@ -1000,6 +1011,28 @@ export class GameEngine {
                 }
             } else {
                 this.advanceTurnToNextActive(this.state.currentTurn);
+            }
+        } else {
+            // Found a next player, but check if they are the ONLY one left who hasn't passed (Last Man Standing)
+            // This happens when everyone else passed.
+            // Condition: Total active players that haven't passed == 1, and that matches the found player.
+            // However, verify if 'foundNext' simply found the first available. 
+            // We need to verify if there are ANY OTHER eligible players.
+
+            const activeUnpassed = this.state.players.filter(p => !p.hasPassed && p.hand.length > 0);
+            if (activeUnpassed.length === 1 && activeUnpassed[0].id === this.state.currentTurn) {
+                // Determine if they are effectively the winner of the trick
+                // This logic is tricky: if I play, then next player passes... eventually it comes back to me.
+                // When it comes back to me, I am the only unpassed.
+                // But I should check if the *pile* belongs to me?
+                const topMove = this.getTopMove();
+                if (topMove && topMove.playerId === this.state.currentTurn) {
+                    // It's my turn, and I own the top card, and everyone else passed.
+                    // Trick clear!
+                    this.emitEffect('pile_clear', this.state.currentTurn);
+                    this.clearPile();
+                    // I start again
+                }
             }
         }
     }
