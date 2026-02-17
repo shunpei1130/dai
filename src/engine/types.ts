@@ -119,6 +119,8 @@ export interface GameState {
     previousRankings: { playerId: PlayerId; rankTitle: PlayerRankTitle }[];
     /** Q-Bomber: pending target rank to discard from all hands */
     pendingQBomberRank: Rank | null;
+    /** Deferred pile clear: true when pile should be cleared after pending action completes */
+    pendingClearPile: boolean;
     /** Last game effect for UI animation */
     lastEffect: GameEffect | null;
     /** Effect queue for multiple simultaneous effects */

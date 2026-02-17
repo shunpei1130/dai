@@ -51,6 +51,7 @@ export class GameEngine {
             pendingActionPlayerId: null,
             previousRankings: [],
             pendingQBomberRank: null,
+            pendingClearPile: false,
             lastEffect: null,
             effectQueue: [],
         };
@@ -114,6 +115,7 @@ export class GameEngine {
             pendingActionPlayerId: null,
             previousRankings: this.state.previousRankings || [],
             pendingQBomberRank: null,
+            pendingClearPile: false,
             lastEffect: null,
             effectQueue: [],
         };
@@ -380,22 +382,9 @@ export class GameEngine {
             return { ...this.state };
         }
 
-        // Advance turn based on effects
-        // Handle 7-pass pending action
-        if (effects.pendingGiveCards > 0 && player.hand.length > 0) {
-            this.state.pendingGiveCards = effects.pendingGiveCards;
-            this.state.pendingActionPlayerId = playerId;
-        }
-
-        // Handle 10-discard pending action
-        if (effects.pendingDiscardCount > 0 && player.hand.length > 0) {
-            this.state.pendingDiscardCount = effects.pendingDiscardCount;
-            this.state.pendingActionPlayerId = playerId;
-        }
-
-        // Handle Q-Bomber pending action
-        if (effects.pendingQBomber && player.hand.length >= 0) {
-            // CPU auto-selects a random rank, human will need UI
+        // --- Pending action setup ---
+        // Q-Bomber: process FIRST (independent of pile clear)
+        if (effects.pendingQBomber) {
             if (player.isCpu) {
                 this.executeQBomber(playerId, this.cpuSelectQBomberTarget(player), false);
             } else {
@@ -404,15 +393,33 @@ export class GameEngine {
             }
         }
 
-        // Advance turn based on effects
+        // 7-pass pending action
+        if (effects.pendingGiveCards > 0 && player.hand.length > 0) {
+            this.state.pendingGiveCards = effects.pendingGiveCards;
+            this.state.pendingActionPlayerId = playerId;
+        }
+
+        // 10-discard pending action
+        if (effects.pendingDiscardCount > 0 && player.hand.length > 0) {
+            this.state.pendingDiscardCount = effects.pendingDiscardCount;
+            this.state.pendingActionPlayerId = playerId;
+        }
+
+        // --- Turn advancement ---
         if (effects.clearPile) {
-            this.emitEffect('pile_clear', playerId);
-            this.clearPile();
-            if (player.hand.length === 0) {
-                this.advanceTurnToNextActive(playerId);
+            // If there's a pending action, defer pile clear until action completes
+            if (this.state.pendingActionPlayerId) {
+                // Store that we need to clear pile after pending action
+                this.state.pendingClearPile = true;
             } else {
-                this.state.currentTurn = playerId;
-                this.state.players.forEach(p => p.hasPassed = false);
+                this.emitEffect('pile_clear', playerId);
+                this.clearPile();
+                if (player.hand.length === 0) {
+                    this.advanceTurnToNextActive(playerId);
+                } else {
+                    this.state.currentTurn = playerId;
+                    this.state.players.forEach(p => p.hasPassed = false);
+                }
             }
         } else {
             if (effects.skipCount > 0) {
@@ -441,7 +448,19 @@ export class GameEngine {
             totalDiscarded += before - p.hand.length;
         });
 
-        if (advanceTurn) {
+        // Handle deferred pile clear
+        if (this.state.pendingClearPile) {
+            this.state.pendingClearPile = false;
+            this.emitEffect('pile_clear', playerId);
+            this.clearPile();
+            const player = this.state.players.find(p => p.id === playerId);
+            if (player && player.hand.length > 0) {
+                this.state.currentTurn = playerId;
+                this.state.players.forEach(p => p.hasPassed = false);
+            } else {
+                this.advanceTurnToNextActive(playerId);
+            }
+        } else if (advanceTurn) {
             this.advanceTurnToNext();
         }
 
@@ -489,7 +508,21 @@ export class GameEngine {
             fromPlayer.score += RANK_SCORES[fromPlayer.rankTitle];
         }
 
-        this.advanceTurnToNext();
+        // Handle deferred pile clear
+        if (this.state.pendingClearPile) {
+            this.state.pendingClearPile = false;
+            this.emitEffect('pile_clear', playerId);
+            this.clearPile();
+            if (fromPlayer.hand.length > 0) {
+                this.state.currentTurn = playerId;
+                this.state.players.forEach(p => p.hasPassed = false);
+            } else {
+                this.advanceTurnToNextActive(playerId);
+            }
+        } else {
+            this.advanceTurnToNext();
+        }
+
         return { ...this.state };
     }
 
@@ -513,7 +546,21 @@ export class GameEngine {
             player.score += RANK_SCORES[player.rankTitle];
         }
 
-        this.advanceTurnToNext();
+        // Handle deferred pile clear
+        if (this.state.pendingClearPile) {
+            this.state.pendingClearPile = false;
+            this.emitEffect('pile_clear', playerId);
+            this.clearPile();
+            if (player.hand.length > 0) {
+                this.state.currentTurn = playerId;
+                this.state.players.forEach(p => p.hasPassed = false);
+            } else {
+                this.advanceTurnToNextActive(playerId);
+            }
+        } else {
+            this.advanceTurnToNext();
+        }
+
         return { ...this.state };
     }
 
@@ -972,6 +1019,7 @@ export class GameEngine {
         this.state.suitLock = { active: false, suits: [] };
         this.state.isElevenBack = false;
         this.state.skipCount = 0;
+        this.state.pendingClearPile = false;
     }
 
     private advanceTurnToNext(): void {
@@ -982,27 +1030,40 @@ export class GameEngine {
         let skip = this.state.skipCount;
         this.state.skipCount = 0;
 
-        for (let i = 1; i <= this.state.players.length + skip; i++) {
+        // Iterate through players in turn direction.
+        // We need enough iterations to go around the table plus skip count.
+        const maxIter = this.state.players.length * 2;
+
+        for (let i = 1; i <= maxIter; i++) {
             const nextIndex = ((currentIndex + (i * dir)) % this.state.players.length + this.state.players.length) % this.state.players.length;
             const p = this.state.players[nextIndex];
 
-            if (p.hand.length > 0 && !p.hasPassed) {
-                if (skip > 0) {
-                    skip--;
-                    continue;
-                }
-                this.state.currentTurn = p.id;
-                foundNext = true;
-                break;
+            // Skip finished players entirely (don't count towards skip)
+            if (p.hand.length === 0) continue;
+
+            // Skip passed players entirely (don't count towards skip)
+            if (p.hasPassed) continue;
+
+            // This is an eligible player - should they be skipped by 5-skip?
+            if (skip > 0) {
+                skip--;
+                continue;
             }
+
+            this.state.currentTurn = p.id;
+            foundNext = true;
+            break;
         }
 
         if (!foundNext) {
+            // No eligible player found — everyone has passed or been skipped.
+            // The trick winner (top move owner) leads the next trick.
             const lastMove = this.getTopMove();
             if (lastMove) {
                 const winnerId = lastMove.playerId;
                 const winner = this.state.players.find(p => p.id === winnerId);
 
+                this.emitEffect('pile_clear', winnerId);
                 this.clearPile();
                 if (winner && winner.hand.length > 0) {
                     this.state.currentTurn = winnerId;
@@ -1013,26 +1074,15 @@ export class GameEngine {
                 this.advanceTurnToNextActive(this.state.currentTurn);
             }
         } else {
-            // Found a next player, but check if they are the ONLY one left who hasn't passed (Last Man Standing)
-            // This happens when everyone else passed.
-            // Condition: Total active players that haven't passed == 1, and that matches the found player.
-            // However, verify if 'foundNext' simply found the first available. 
-            // We need to verify if there are ANY OTHER eligible players.
-
-            const activeUnpassed = this.state.players.filter(p => !p.hasPassed && p.hand.length > 0);
-            if (activeUnpassed.length === 1 && activeUnpassed[0].id === this.state.currentTurn) {
-                // Determine if they are effectively the winner of the trick
-                // This logic is tricky: if I play, then next player passes... eventually it comes back to me.
-                // When it comes back to me, I am the only unpassed.
-                // But I should check if the *pile* belongs to me?
-                const topMove = this.getTopMove();
-                if (topMove && topMove.playerId === this.state.currentTurn) {
-                    // It's my turn, and I own the top card, and everyone else passed.
-                    // Trick clear!
-                    this.emitEffect('pile_clear', this.state.currentTurn);
-                    this.clearPile();
-                    // I start again
-                }
+            // Found next player, but check if they are the pile owner
+            // (everyone else passed/skipped → trick is won, pile should clear)
+            const topMove = this.getTopMove();
+            if (topMove && topMove.playerId === this.state.currentTurn) {
+                // This player owns the top move and it came back to them.
+                // Trick clear!
+                this.emitEffect('pile_clear', this.state.currentTurn);
+                this.clearPile();
+                // They start the next trick
             }
         }
     }

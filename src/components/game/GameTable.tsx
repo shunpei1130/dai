@@ -57,7 +57,36 @@ export const GameTable: React.FC<GameTableProps> = ({ rules, onGoHome }) => {
         if (gameState.phase !== 'playing') return;
 
         const currentPlayer = gameState.players.find(p => p.id === gameState.currentTurn);
-        if (!currentPlayer?.isCpu) return;
+        if (!currentPlayer?.isCpu) {
+            // Also check if a CPU has a pending action (pendingActionPlayerId might differ from currentTurn)
+            if (gameState.pendingActionPlayerId) {
+                const pendingPlayer = gameState.players.find(p => p.id === gameState.pendingActionPlayerId);
+                if (!pendingPlayer?.isCpu) return;
+
+                const timeout = setTimeout(() => {
+                    const engine = engineRef.current;
+                    const cpuEngine = cpuEnginesRef.current.find(_c => {
+                        return engine.getState().pendingActionPlayerId === pendingPlayer.id;
+                    });
+                    if (!cpuEngine) return;
+
+                    try {
+                        if (gameState.pendingGiveCards > 0) {
+                            const cards = cpuEngine.decideGiveCards(gameState.pendingGiveCards);
+                            const newState = engine.giveCards(pendingPlayer.id, cards);
+                            setGameState(newState);
+                        } else if (gameState.pendingDiscardCount > 0) {
+                            const cards = cpuEngine.decideDiscardCards(gameState.pendingDiscardCount);
+                            const newState = engine.discardCards(pendingPlayer.id, cards);
+                            setGameState(newState);
+                        }
+                        // Q-Bomber for CPU is handled in playCards() directly
+                    } catch { /* game might be over */ }
+                }, 1000);
+                return () => clearTimeout(timeout);
+            }
+            return;
+        }
 
         const timeout = setTimeout(() => {
             const engine = engineRef.current;
@@ -83,6 +112,8 @@ export const GameTable: React.FC<GameTableProps> = ({ rules, onGoHome }) => {
                         setGameState(newState);
                         return;
                     }
+                    // Q-Bomber for CPU is handled in playCards() directly
+                    return;
                 }
 
                 const move = cpuEngine.decideMove();
@@ -213,7 +244,7 @@ export const GameTable: React.FC<GameTableProps> = ({ rules, onGoHome }) => {
             </div>
 
             {/* Q-Bomber Selector */}
-            {isMyTurn && gameState.pendingActionPlayerId === humanPlayer.id &&
+            {gameState.pendingActionPlayerId === humanPlayer.id &&
                 gameState.pendingGiveCards === 0 && gameState.pendingDiscardCount === 0 && (
                     <div className="absolute inset-0 z-40 bg-black/80 flex flex-col items-center justify-center p-4">
                         <motion.div
