@@ -36,12 +36,18 @@ export interface RuleConfig {
     reverse: boolean;
     /** 9リバース: Playing 9 reverses turn direction */
     nineReverse: boolean;
+    /** 9リバース永続: 9-reverse persists even after pile clears (DQX style) */
+    nineReversePersist: boolean;
 
     // === Suit & Lock Rules ===
     /** 縛り(スート縛り): Same suit played 2x consecutively locks suit */
     suitLock: boolean;
     /** 激縛り: Suit + number consecutive lock (♥4→♥5→♥6 only) */
     superLock: boolean;
+    /** 数しば: Consecutive rank lock - must continue consecutive ranks */
+    numberLock: boolean;
+    /** 片縛り: Partial suit lock - partial suit match triggers lock */
+    partialLock: boolean;
 
     // === Special Combos ===
     /** 砂嵐(33返し): Three 3s beats anything, including Joker */
@@ -55,7 +61,7 @@ export interface RuleConfig {
     /** 禁止上がり: Cannot finish with certain cards (Joker, 2, 8, etc.) */
     forbiddenFinish: boolean;
     /** Which cards cannot be used to finish (only applies if forbiddenFinish is true) */
-    forbiddenFinishCards: ('Joker' | '2' | '8')[];
+    forbiddenFinishCards: ('Joker' | '2' | '8' | 'spade3')[];
 
     // === Between-Round Rules ===
     /** カード交換: Card exchange between ranks at start of round */
@@ -72,6 +78,10 @@ export interface RuleConfig {
     // === Sequence Variants ===
     /** 階段革命: 5+ card sequence triggers revolution */
     sequenceRevolution: boolean;
+    /** 8切り階段除外: 8 in sequence does NOT trigger 8-stop (federation rule) */
+    eightStopExcludeSequence: boolean;
+    /** 親パス禁止: Leader cannot pass when pile is empty */
+    leaderMustPlay: boolean;
 
     // === Player Config ===
     /** Number of Jokers in the deck (1 or 2) */
@@ -91,9 +101,12 @@ export const DEFAULT_RULES: RuleConfig = {
     tenDiscard: true,
     reverse: false,
     nineReverse: true,
+    nineReversePersist: true,
 
     suitLock: true,
     superLock: false,
+    numberLock: false,
+    partialLock: false,
 
     sandstorm: true,
     ambulance: true,
@@ -112,6 +125,8 @@ export const DEFAULT_RULES: RuleConfig = {
     cataclysm: false,
 
     sequenceRevolution: true,
+    eightStopExcludeSequence: true,
+    leaderMustPlay: true,
 
     jokerCount: 1,
 };
@@ -130,9 +145,12 @@ export const SIMPLE_RULES: RuleConfig = {
     tenDiscard: false,
     reverse: false,
     nineReverse: false,
+    nineReversePersist: false,
 
     suitLock: false,
     superLock: false,
+    numberLock: false,
+    partialLock: false,
 
     sandstorm: false,
     ambulance: false,
@@ -148,6 +166,8 @@ export const SIMPLE_RULES: RuleConfig = {
     cataclysm: false,
 
     sequenceRevolution: false,
+    eightStopExcludeSequence: false,
+    leaderMustPlay: false,
 
     jokerCount: 1,
 };
@@ -166,9 +186,12 @@ export const ALL_RULES: RuleConfig = {
     tenDiscard: true,
     reverse: true,
     nineReverse: true,
+    nineReversePersist: true,
 
     suitLock: true,
     superLock: true,
+    numberLock: true,
+    partialLock: true,
 
     sandstorm: true,
     ambulance: true,
@@ -187,6 +210,8 @@ export const ALL_RULES: RuleConfig = {
     cataclysm: true,
 
     sequenceRevolution: true,
+    eightStopExcludeSequence: true,
+    leaderMustPlay: true,
 
     jokerCount: 2,
 };

@@ -573,6 +573,11 @@ export class GameEngine {
             throw new Error("Not your turn");
         }
 
+        // Leader must play rule: cannot pass on empty pile
+        if (this.rules.leaderMustPlay && this.state.pile.length === 0) {
+            throw new Error("Leader must play - cannot pass on empty pile");
+        }
+
         this.state.effectQueue = [];
         this.state.lastEffect = null;
 
@@ -824,10 +829,13 @@ export class GameEngine {
             this.emitEffect('sandstorm', playerId);
         }
 
-        // 8-Stop
+        // 8-Stop (exclude sequences if eightStopExcludeSequence is enabled, per federation rules)
         if (this.rules.eightStop && cards.some(c => c.rank === '8')) {
-            clearPile = true;
-            this.emitEffect('eight_stop', playerId);
+            const shouldExcludeSequence = this.rules.eightStopExcludeSequence && moveType === 'sequence';
+            if (!shouldExcludeSequence) {
+                clearPile = true;
+                this.emitEffect('eight_stop', playerId);
+            }
         }
 
         // Ambulance (救急車): Two 9s clear the pile
@@ -870,9 +878,12 @@ export class GameEngine {
             this.state.turnDirection = this.state.turnDirection === 1 ? -1 : 1;
         }
 
-        // Q-Bomber
+        // Q-Bomber (DQX: cannot declare target rank when finishing with Q)
         if (this.rules.qBomber && cards.some(c => c.rank === 'Q')) {
-            pendingQBomber = true;
+            const player = this.state.players.find(p => p.id === playerId);
+            if (player && player.hand.length > 0) {
+                pendingQBomber = true;
+            }
         }
 
         // Suit lock detection
@@ -897,7 +908,7 @@ export class GameEngine {
     // =====================================================
 
     private updateSuitLock(cards: CardDef[]): void {
-        if (!this.rules.suitLock && !this.rules.superLock) return;
+        if (!this.rules.suitLock && !this.rules.superLock && !this.rules.numberLock && !this.rules.partialLock) return;
 
         const topMove = this.state.pile.length >= 2 ? this.state.pile[this.state.pile.length - 2] : undefined;
         if (!topMove) {
@@ -909,6 +920,21 @@ export class GameEngine {
         const currSuits = cards.filter(c => c.rank !== 'Joker').map(c => c.suit);
 
         if (prevSuits.length > 0 && currSuits.length > 0) {
+            // Check for number lock (数しば): consecutive ranks
+            let isNumberLocked = false;
+            if (this.rules.numberLock) {
+                const prevNonJoker = topMove.cards.filter(c => c.rank !== 'Joker');
+                const currNonJoker = cards.filter(c => c.rank !== 'Joker');
+                if (prevNonJoker.length > 0 && currNonJoker.length > 0) {
+                    const prevStrength = CardHelper.getStrength(prevNonJoker[0].rank, false);
+                    const currStrength = CardHelper.getStrength(currNonJoker[0].rank, false);
+                    if (Math.abs(currStrength - prevStrength) === 1) {
+                        isNumberLocked = true;
+                    }
+                }
+            }
+
+            // Full suit match (standard suit lock)
             if (prevSuits.length === 1 && currSuits.length === 1 && prevSuits[0] === currSuits[0]) {
                 const lockedSuits = [prevSuits[0]];
 
@@ -917,21 +943,46 @@ export class GameEngine {
                     const prevStrength = CardHelper.getStrength(topMove.cards[0].rank, false);
                     const currStrength = CardHelper.getStrength(cards[0].rank, false);
                     if (currStrength === prevStrength + 1) {
-                        this.state.suitLock = { active: true, suits: lockedSuits, lastRank: currStrength };
+                        this.state.suitLock = { active: true, suits: lockedSuits, lastRank: currStrength, numberLocked: isNumberLocked };
                         this.emitEffect('super_lock');
                         return;
                     }
                 }
 
-                this.state.suitLock = { active: true, suits: lockedSuits };
-                this.emitEffect('suit_lock');
+                this.state.suitLock = { active: true, suits: lockedSuits, numberLocked: isNumberLocked };
+                if (isNumberLocked) {
+                    this.emitEffect('number_lock');
+                } else {
+                    this.emitEffect('suit_lock');
+                }
             } else if (prevSuits.length === currSuits.length) {
                 const sorted1 = [...prevSuits].sort();
                 const sorted2 = [...currSuits].sort();
-                if (sorted1.every((s, i) => s === sorted2[i])) {
-                    this.state.suitLock = { active: true, suits: sorted1 };
-                    this.emitEffect('suit_lock');
+                const fullMatch = sorted1.every((s, i) => s === sorted2[i]);
+
+                // Partial lock (片縛り): at least one suit matches
+                if (fullMatch) {
+                    this.state.suitLock = { active: true, suits: sorted1, numberLocked: isNumberLocked };
+                    if (isNumberLocked) {
+                        this.emitEffect('number_lock');
+                    } else {
+                        this.emitEffect('suit_lock');
+                    }
+                } else if (this.rules.partialLock) {
+                    const hasPartialMatch = sorted2.some(s => sorted1.includes(s));
+                    if (hasPartialMatch) {
+                        // Lock on the matching suits only
+                        const matchedSuits = sorted2.filter(s => sorted1.includes(s));
+                        this.state.suitLock = { active: true, suits: matchedSuits, numberLocked: isNumberLocked };
+                        this.emitEffect('suit_lock');
+                    }
                 }
+            }
+
+            // Number lock only (no suit match required)
+            if (isNumberLocked && !this.state.suitLock.active) {
+                this.state.suitLock = { ...this.state.suitLock, numberLocked: true };
+                this.emitEffect('number_lock');
             }
         }
     }
@@ -945,6 +996,10 @@ export class GameEngine {
 
         for (const card of cards) {
             if (this.rules.forbiddenFinishCards.includes(card.rank as '2' | '8' | 'Joker')) {
+                return true;
+            }
+            // Spade-3 forbidden finish check
+            if (this.rules.forbiddenFinishCards.includes('spade3') && card.suit === 'spades' && card.rank === '3') {
                 return true;
             }
         }
@@ -1020,6 +1075,10 @@ export class GameEngine {
         this.state.isElevenBack = false;
         this.state.skipCount = 0;
         this.state.pendingClearPile = false;
+        // 9-reverse persistence: if nineReversePersist is false, reset turn direction
+        if (!this.rules.nineReversePersist) {
+            this.state.turnDirection = 1;
+        }
     }
 
     private advanceTurnToNext(): void {

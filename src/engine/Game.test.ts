@@ -204,3 +204,181 @@ describe('Trick Clearing', () => {
         expect(afterAllPass.currentTurn).toBe('player-0');
     });
 });
+
+describe('8-Stop Sequence Exclusion (Deep Research Report)', () => {
+    it('should NOT trigger 8-stop when 8 is part of a sequence (eightStopExcludeSequence=true)', () => {
+        const game = setupGame({
+            eightStop: true, eightStopExcludeSequence: true, sequence: true,
+            nineReverse: false, elevenBack: false, ambulance: false,
+            sevenPass: false, fiveSkip: false, tenDiscard: false, suitLock: false, qBomber: false
+        });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        // Set up a sequence containing 8: 6-7-8 of hearts (avoids 9-reverse/ambulance)
+        const six = makeCard('6', 'hearts', 'six-h');
+        const seven = makeCard('7', 'hearts', 'seven-h');
+        const eight = makeCard('8', 'hearts', 'eight-h');
+
+        state.players[0].hand = [six, seven, eight, makeCard('3', 'diamonds', 'three-d')];
+        state.players[1].hand = [makeCard('4', 'clubs', 'four-c'), makeCard('5', 'clubs', 'five-c')];
+        state.players[2].hand = [makeCard('K', 'clubs', 'king-c'), makeCard('K', 'diamonds', 'king-d')];
+        state.players[3].hand = [makeCard('A', 'clubs', 'ace-c'), makeCard('2', 'diamonds', 'two-d')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        const afterPlay = game.playCards('player-0', [six, seven, eight]);
+
+        // Pile should NOT be cleared (8-stop excluded for sequences)
+        expect(afterPlay.pile.length).toBe(1);
+        // Turn should advance to next player
+        expect(afterPlay.currentTurn).not.toBe('player-0');
+    });
+
+    it('should STILL trigger 8-stop for non-sequence plays with 8 (eightStopExcludeSequence=true)', () => {
+        const game = setupGame({ eightStop: true, eightStopExcludeSequence: true, suitLock: false });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        const eight = makeCard('8', 'hearts', 'eight-h');
+
+        state.players[0].hand = [eight, makeCard('3', 'diamonds', 'three-d')];
+        state.players[1].hand = [makeCard('4', 'clubs', 'four-c'), makeCard('5', 'clubs', 'five-c')];
+        state.players[2].hand = [makeCard('6', 'clubs', 'six-c'), makeCard('K', 'diamonds', 'king-d')];
+        state.players[3].hand = [makeCard('A', 'clubs', 'ace-c'), makeCard('2', 'diamonds', 'two-d')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        const afterPlay = game.playCards('player-0', [eight]);
+
+        // Pile should be cleared (normal 8-stop)
+        expect(afterPlay.pile.length).toBe(0);
+        // Player-0 should lead next trick
+        expect(afterPlay.currentTurn).toBe('player-0');
+    });
+});
+
+describe('Q-Bomber Finish Edge Case (Deep Research Report)', () => {
+    it('should NOT trigger Q-Bomber when finishing with Q (hand becomes empty)', () => {
+        const game = setupGame({ qBomber: true, eightStop: false, forbiddenFinish: false });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        const queenCard = makeCard('Q', 'hearts', 'queen-h');
+
+        // Player-0 has only Q left
+        state.players[0].hand = [queenCard];
+        state.players[0].isCpu = false;
+        state.players[1].hand = [makeCard('K', 'hearts', 'king-h'), makeCard('6', 'spades', 'six-s')];
+        state.players[2].hand = [makeCard('K', 'clubs', 'king-c'), makeCard('9', 'diamonds', 'nine-d')];
+        state.players[3].hand = [makeCard('K', 'diamonds', 'king-d'), makeCard('J', 'hearts', 'jack-h')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        const afterPlay = game.playCards('player-0', [queenCard]);
+
+        // No pending action should be set (Q-Bomber skipped on finish)
+        expect(afterPlay.pendingActionPlayerId).toBeNull();
+        // Player should have finished
+        expect(afterPlay.winners).toContain('player-0');
+    });
+});
+
+describe('Leader Must Play (Deep Research Report)', () => {
+    it('should throw error when leader tries to pass on empty pile', () => {
+        const game = setupGame({ leaderMustPlay: true });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        expect(() => game.pass('player-0')).toThrow('Leader must play');
+    });
+
+    it('should allow pass when pile is not empty', () => {
+        const game = setupGame({ leaderMustPlay: true, eightStop: false, suitLock: false });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        const card = makeCard('A', 'hearts', 'ace-h');
+        state.players[0].hand = [card, makeCard('3', 'diamonds', 'three-d')];
+        state.players[1].hand = [makeCard('4', 'clubs', 'four-c'), makeCard('5', 'clubs', 'five-c')];
+        state.players[2].hand = [makeCard('6', 'clubs', 'six-c'), makeCard('K', 'diamonds', 'king-d')];
+        state.players[3].hand = [makeCard('2', 'clubs', 'two-c'), makeCard('7', 'diamonds', 'seven-d')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        game.playCards('player-0', [card]);
+
+        // Player-1 should be able to pass (pile is not empty)
+        expect(() => game.pass('player-1')).not.toThrow();
+    });
+});
+
+describe('9-Reverse Persistence (Deep Research Report)', () => {
+    it('should maintain reverse direction when pile clears with nineReversePersist=true', () => {
+        const game = setupGame({
+            nineReverse: true, nineReversePersist: true, eightStop: true,
+            suitLock: false, fiveSkip: false, sevenPass: false, tenDiscard: false,
+            elevenBack: false, ambulance: false, leaderMustPlay: false
+        });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        const nine = makeCard('9', 'hearts', 'nine-h');
+        const eight = makeCard('8', 'spades', 'eight-s');
+
+        state.players[0].hand = [nine, makeCard('3', 'diamonds', 'three-d')];
+        state.players[1].hand = [makeCard('4', 'clubs', 'four-c'), makeCard('K', 'clubs', 'king-c')];
+        state.players[2].hand = [makeCard('6', 'clubs', 'six-c'), makeCard('K', 'diamonds', 'king-d')];
+        state.players[3].hand = [eight, makeCard('2', 'diamonds', 'two-d')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        // Play 9 to reverse direction
+        game.playCards('player-0', [nine]);
+
+        // Direction should be reversed
+        expect((game as any).state.turnDirection).toBe(-1);
+
+        // All other players pass to clear the pile
+        // Direction is reversed so order is: player-3, player-2, player-1
+        game.pass('player-3');
+        game.pass('player-2');
+        game.pass('player-1');
+
+        // Pile should have been cleared, direction should REMAIN reversed (persist)
+        expect((game as any).state.turnDirection).toBe(-1);
+    });
+
+    it('should reset reverse direction when pile clears with nineReversePersist=false', () => {
+        const game = setupGame({
+            nineReverse: true, nineReversePersist: false, eightStop: true,
+            suitLock: false, fiveSkip: false, sevenPass: false, tenDiscard: false,
+            elevenBack: false, ambulance: false, leaderMustPlay: false
+        });
+        const state = game.initGame(['P1', 'P2', 'P3', 'P4']);
+
+        const nine = makeCard('9', 'hearts', 'nine-h');
+
+        state.players[0].hand = [nine, makeCard('3', 'diamonds', 'three-d')];
+        state.players[1].hand = [makeCard('4', 'clubs', 'four-c'), makeCard('K', 'clubs', 'king-c')];
+        state.players[2].hand = [makeCard('6', 'clubs', 'six-c'), makeCard('K', 'diamonds', 'king-d')];
+        state.players[3].hand = [makeCard('A', 'clubs', 'ace-c'), makeCard('2', 'diamonds', 'two-d')];
+
+        (game as any).state.currentTurn = 'player-0';
+        (game as any).state.pile = [];
+
+        // Play 9 to reverse direction
+        game.playCards('player-0', [nine]);
+        expect((game as any).state.turnDirection).toBe(-1);
+
+        // All other players pass to clear pile
+        game.pass('player-3');
+        game.pass('player-2');
+        game.pass('player-1');
+
+        // After pile clear, direction should be RESET (non-persist)
+        expect((game as any).state.turnDirection).toBe(1);
+    });
+});

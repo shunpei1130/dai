@@ -90,10 +90,13 @@ export const RuleSettings: React.FC<RuleSettingsProps> = ({ rules, onSave, onClo
                     <RuleToggle label="7-Pass" labelJa="7渡し" description="7を出すとカードを次のプレイヤーに渡せる" checked={localRules.sevenPass} onChange={v => updateRule('sevenPass', v)} />
                     <RuleToggle label="10-Discard" labelJa="10捨て" description="10を出すと手札から追加でカードを捨てられる" checked={localRules.tenDiscard} onChange={v => updateRule('tenDiscard', v)} />
                     <RuleToggle label="9-Reverse" labelJa="9リバース" description="9を出すとターン順序が逆転" checked={localRules.nineReverse} onChange={v => updateRule('nineReverse', v)} isNew />
+                    <RuleToggle label="9-Reverse Persist" labelJa="9リバース永続" description="9リバースの効果が場流れ後も維持される(DQX式)" checked={localRules.nineReversePersist} onChange={v => updateRule('nineReversePersist', v)} isNew />
 
                     <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mt-4 mb-2">縛りルール</h3>
                     <RuleToggle label="Suit Lock" labelJa="縛り" description="同スートが連続すると以降同スートのみ出せる" checked={localRules.suitLock} onChange={v => updateRule('suitLock', v)} />
                     <RuleToggle label="Super Lock" labelJa="激縛り" description="同スート+連続数字で完全縛り (♥4→♥5→♥6)" checked={localRules.superLock} onChange={v => updateRule('superLock', v)} isNew />
+                    <RuleToggle label="Number Lock" labelJa="数しば" description="連続数字が続くと次も連続数字しか出せない" checked={localRules.numberLock} onChange={v => updateRule('numberLock', v)} isNew />
+                    <RuleToggle label="Partial Lock" labelJa="片縛り" description="複数枚出しで一部スート一致でも縛りが発生" checked={localRules.partialLock} onChange={v => updateRule('partialLock', v)} isNew />
 
                     <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mt-4 mb-2">特殊コンボ</h3>
                     <RuleToggle label="Sandstorm" labelJa="砂嵐(33返し)" description="3を3枚出すと全カードに勝てる(ジョーカー含む)" checked={localRules.sandstorm} onChange={v => updateRule('sandstorm', v)} isNew />
@@ -107,6 +110,8 @@ export const RuleSettings: React.FC<RuleSettingsProps> = ({ rules, onSave, onClo
                     <RuleToggle label="Card Exchange" labelJa="カード交換" description="ラウンド間で大富豪⇔大貧民がカードを交換" checked={localRules.cardExchange} onChange={v => updateRule('cardExchange', v)} />
                     <RuleToggle label="Capital Fall" labelJa="都落ち" description="前回の大富豪が1位でなければ大貧民に降格" checked={localRules.capitalFall} onChange={v => updateRule('capitalFall', v)} />
                     <RuleToggle label="Sequence Revolution" labelJa="階段革命" description="5枚以上の階段で革命が発生" checked={localRules.sequenceRevolution} onChange={v => updateRule('sequenceRevolution', v)} />
+                    <RuleToggle label="8-Stop Exclude Seq" labelJa="8切り階段除外" description="8を含む階段で8切りが発動しない(連盟公式)" checked={localRules.eightStopExcludeSequence} onChange={v => updateRule('eightStopExcludeSequence', v)} isNew />
+                    <RuleToggle label="Leader Must Play" labelJa="親パス禁止" description="場が空のとき親はパスできない(DQX式)" checked={localRules.leaderMustPlay} onChange={v => updateRule('leaderMustPlay', v)} isNew />
                     <RuleToggle label="Gekokujo" labelJa="下剋上" description="大貧民が1位で上がると全員の階級が反転" checked={localRules.gekokujo} onChange={v => updateRule('gekokujo', v)} isNew />
                     <RuleToggle label="Cataclysm" labelJa="天変地異" description="大貧民の手札が全て10以下なら大富豪と手札交換" checked={localRules.cataclysm} onChange={v => updateRule('cataclysm', v)} isNew />
 

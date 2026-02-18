@@ -33,6 +33,7 @@ export type GameEffectType =
     | 'eleven_back'        // 11バック - 🔄強さ反転
     | 'suit_lock'          // 縛り - 🔒チェーン
     | 'super_lock'         // 激縛り - 🔒🔒ダブルチェーン
+    | 'number_lock'        // 数しば - 🔢連番縛り
     | 'five_skip'          // 5スキップ - ⏭️
     | 'seven_pass'         // 7渡し - 📤
     | 'ten_discard'        // 10捨て - 🗑️
@@ -89,6 +90,8 @@ export interface SuitLockState {
     suits: Suit[];
     /** For super lock: the last rank played (to enforce consecutive) */
     lastRank?: number;
+    /** For number lock: whether consecutive rank constraint is active */
+    numberLocked?: boolean;
 }
 
 export interface GameState {
@@ -174,6 +177,7 @@ export const EFFECT_LABELS: Record<GameEffectType, { ja: string; emoji: string }
     eleven_back: { ja: '11バック!', emoji: '🔄' },
     suit_lock: { ja: '縛り!', emoji: '🔒' },
     super_lock: { ja: '激縛り!', emoji: '🔒' },
+    number_lock: { ja: '数しば!', emoji: '🔢' },
     five_skip: { ja: 'スキップ!', emoji: '⏭️' },
     seven_pass: { ja: '7渡し!', emoji: '📤' },
     ten_discard: { ja: '10捨て!', emoji: '🗑️' },
