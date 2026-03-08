@@ -1,4 +1,4 @@
-﻿# dai
+# dai
 
 Room-based Daifugo web app for Vercel.
 
@@ -18,6 +18,8 @@ Redis is optional for local testing. If these are not set, the app falls back to
 
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
+
+Vercel preview and production deployments require Redis. Without it, room state is not shared across function invocations, so multiplayer rooms will disappear between requests.
 
 ## Project structure
 

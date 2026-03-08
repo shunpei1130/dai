@@ -13,7 +13,8 @@ const state = {
   polling: null,
   lastFlashId: 0,
   flashQueue: [],
-  flashing: false
+  flashing: false,
+  activeModal: ""
 };
 
 function getOrCreateClientId() {
@@ -84,6 +85,18 @@ function clearSelections() {
   state.pendingSelected.clear();
 }
 
+function openModal(modal) {
+  state.activeModal = modal;
+  render();
+}
+
+function closeModal() {
+  if (!state.activeModal) {
+    return;
+  }
+  state.activeModal = "";
+  render();
+}
 function normalizeSelectionAgainstHand() {
   const handIds = new Set(state.room?.self?.hand?.map((card) => card.id) || []);
   state.selected = new Set([...state.selected].filter((cardId) => handIds.has(cardId)));
@@ -103,6 +116,144 @@ function relativeSeatClass(player) {
     2: "north",
     3: "west"
   }[diff];
+}
+
+function cardRankLabel(card) {
+  return card.isJoker ? "JK" : CARD_RANK_LABELS[card.rank] || String(card.rank || "");
+}
+
+function cardSuitLabel(card) {
+  return card.isJoker ? "WILD" : card.suitSymbol;
+}
+
+function comboSignature(combo) {
+  if (!combo) {
+    return "";
+  }
+  return `${combo.text}:${combo.cards.map((card) => card.id).join(",")}`;
+}
+
+function triggerPilePulse() {
+  state.pilePulse = true;
+  if (state.pilePulseTimer) {
+    clearTimeout(state.pilePulseTimer);
+  }
+  state.pilePulseTimer = setTimeout(() => {
+    state.pilePulse = false;
+    render();
+  }, 820);
+}
+
+function setRoomState(nextRoom, { animateCombo = true } = {}) {
+  const previousCombo = comboSignature(state.room?.game?.currentCombo);
+  const nextCombo = comboSignature(nextRoom?.game?.currentCombo);
+
+  state.room = nextRoom;
+
+  if (animateCombo && nextCombo && nextCombo !== previousCombo) {
+    triggerPilePulse();
+  }
+}
+
+function triggerPlayAnimation(cards) {
+  if (!cards?.length) {
+    return;
+  }
+
+  state.playAnimation = {
+    token: `${Date.now()}-${Math.random()}`,
+    cards: [...cards]
+  };
+
+  if (state.playAnimationTimer) {
+    clearTimeout(state.playAnimationTimer);
+  }
+
+  state.playAnimationTimer = setTimeout(() => {
+    state.playAnimation = null;
+    render();
+  }, 980);
+
+  render();
+}
+
+function renderPlayingCard(
+  card,
+  {
+    interactive = false,
+    action = "",
+    cardId = "",
+    selected = false,
+    disabled = false,
+    compact = false,
+    className = "",
+    style = ""
+  } = {}
+) {
+  const tag = interactive ? "button" : "div";
+  const classes = [
+    interactive ? "card-button" : "mini-card",
+    "playing-card",
+    card.suitName,
+    compact ? "compact" : "",
+    selected ? "selected" : "",
+    className
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const attributes = [
+    `class="${classes}"`,
+    style ? `style="${escapeHtml(style)}"` : "",
+    interactive && action ? `data-action="${escapeHtml(action)}"` : "",
+    interactive && cardId ? `data-card-id="${escapeHtml(cardId)}"` : "",
+    interactive && disabled ? "disabled" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const rank = cardRankLabel(card);
+  const suit = cardSuitLabel(card);
+  const centerLabel = card.isJoker ? "JOKER" : card.label;
+
+  return `
+    <${tag} ${attributes}>
+      <span class="card-sheen"></span>
+      <span class="card-corner top">
+        <span class="card-rank">${escapeHtml(rank)}</span>
+        <span class="card-suit">${escapeHtml(suit)}</span>
+      </span>
+      <span class="card-center ${card.isJoker ? "joker" : ""}">
+        <span class="card-center-mark">${escapeHtml(card.isJoker ? "JOKER" : suit)}</span>
+        <span class="card-center-label">${escapeHtml(centerLabel)}</span>
+      </span>
+      <span class="card-corner bottom">
+        <span class="card-rank">${escapeHtml(rank)}</span>
+        <span class="card-suit">${escapeHtml(suit)}</span>
+      </span>
+    </${tag}>
+  `;
+}
+
+function renderPlayBurst() {
+  if (!state.playAnimation?.cards?.length) {
+    return "";
+  }
+
+  return `
+    <div class="play-burst" data-token="${escapeHtml(state.playAnimation.token)}">
+      <div class="play-burst-core"></div>
+      ${state.playAnimation.cards
+        .map((card, index, cards) => {
+          const tilt = (index - (cards.length - 1) / 2) * 9;
+          const spread = (index - (cards.length - 1) / 2) * 56;
+          return `
+            <div class="play-burst-card" style="--burst-index:${index}; --burst-tilt:${tilt}deg; --burst-spread:${spread}px;">
+              ${renderPlayingCard(card, { compact: true, className: "burst-face" })}
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function shareUrl() {
@@ -227,41 +378,36 @@ function renderActionLog() {
 
 function renderSeatCard(player) {
   const seatClass = relativeSeatClass(player);
-  const badges = [player.isBot ? "Bot" : "Player", player.lastRoundRole || "未確定"];
-  if (player.isCurrent) {
-    badges.unshift("手番");
-  }
-  if (player.status === "passed") {
-    badges.push("パス");
-  }
-  if (player.status === "bottom") {
-    badges.push("脱落");
-  }
-  if (player.status === "finished") {
-    badges.push("上がり");
-  }
+  const status = player.isCurrent
+    ? "手番"
+    : player.status === "passed"
+      ? "パス"
+      : player.status === "finished"
+        ? "上がり"
+        : player.status === "bottom"
+          ? "脱落"
+          : player.isBot
+            ? "BOT"
+            : "";
 
   return `
     <article class="seat-card ${seatClass} ${player.isCurrent ? "current" : ""}">
-      <div class="rule-head">
-        <strong>${escapeHtml(player.nickname)}</strong>
-        <span class="badge">${player.points}pt</span>
+      <div class="rule-head seat-head">
+        <strong class="seat-name">${escapeHtml(player.nickname)}</strong>
+        ${status ? `<span class="badge">${escapeHtml(status)}</span>` : ""}
       </div>
-      <div class="meta-row">${badges.map((badge) => `<span class="badge">${escapeHtml(badge)}</span>`).join("")}</div>
-      <div class="muted">手札 ${player.handCount}枚</div>
+      <div class="muted mini-meta">手札 ${player.handCount}枚</div>
     </article>
   `;
 }
-
 function renderPile() {
   const combo = state.room?.game?.currentCombo;
   if (!combo) {
-    return `<div class="empty">場は空です。先手は自由に出せます。</div>`;
+    return `<div class="empty">Play a card to start the pile.</div>`;
   }
 
   return `
     <div>
-      <div class="muted">現在の場札</div>
       <h2>${escapeHtml(combo.text)}</h2>
       <div class="pile-cards">
         ${combo.cards
@@ -277,44 +423,51 @@ function renderPile() {
     </div>
   `;
 }
-
 function renderBoardMetrics() {
   const room = state.room;
-  const direction = room.game.direction === 1 ? "時計回り" : "反時計回り";
-  const lock = room.game.lockedSuits?.map((suit) => ({ S: "♠", H: "♥", D: "♦", C: "♣" }[suit])).join(" ") || "なし";
-  const winner = room.history?.[0]?.ranking?.[0];
+  const turnPlayer = room.players.find((player) => player.isCurrent);
+  const flags = [];
+  if (room.game.revolution) {
+    flags.push("革命中");
+  }
+  if (room.game.elevenBack) {
+    flags.push("11バック");
+  }
+  if (room.game.lockedSuits?.length) {
+    flags.push(`縛り ${room.game.lockedSuits.join(" ")}`);
+  }
 
   return `
-    <div class="toolbar">
-      <span class="code-chip">Room ${escapeHtml(room.roomId)}</span>
-      <span class="badge">Round ${room.roundNumber}</span>
-      <span class="badge">${direction}</span>
-      <span class="badge">縛り ${escapeHtml(lock)}</span>
-      ${room.game.revolution ? '<span class="badge">革命中</span>' : ""}
-      ${room.game.elevenBack ? '<span class="badge">11バック中</span>' : ""}
-      ${winner ? `<span class="badge">前回トップ ${escapeHtml(winner.nickname)}</span>` : ""}
+    <div class="status-strip">
+      <div class="status-main ${room.permissions.canPlay ? "active" : ""}">
+        <strong>${room.permissions.canPlay ? "あなたの番" : `${escapeHtml(turnPlayer?.nickname || "相手")}の番`}</strong>
+        <span>${room.permissions.canPlay ? "カードを選んで出します" : "少し待ってください"}</span>
+      </div>
+      ${flags.length ? `<div class="status-flags">${flags.map((flag) => `<span class="badge">${escapeHtml(flag)}</span>`).join("")}</div>` : ""}
     </div>
   `;
 }
-
 function renderHand() {
   if (!state.room?.self) {
     return "";
   }
 
   const canAct = state.room.permissions.canPlay;
+  const canPass = state.room.permissions.canPass;
   const hand = state.room.self.hand || [];
+  const selectedCount = state.selected.size;
+
   return `
     <div class="hand-panel">
-      <div class="rule-head">
+      <div class="rule-head hand-header">
         <div>
-          <strong>${escapeHtml(state.room.self.nickname)} の手札</strong>
-          <div class="muted">${canAct ? "カードを複数選択して出せます。" : "今は手番待ちです。"}</div>
+          <strong>手札 ${hand.length}枚</strong>
+          <div class="muted hand-copy">${selectedCount ? `${selectedCount}枚選択中` : canAct ? "出すカードを選んでください" : "相手の手番です"}</div>
         </div>
         <div class="hand-actions">
-          <button class="button secondary" data-action="clear-selection">選択解除</button>
-          <button class="button primary" data-action="play-selected" ${canAct ? "" : "disabled"}>出す</button>
-          <button class="button danger" data-action="pass" ${state.room.permissions.canPass ? "" : "disabled"}>パス</button>
+          ${selectedCount ? '<button class="button secondary" data-action="clear-selection">クリア</button>' : ""}
+          ${canAct ? '<button class="button primary" data-action="play-selected">出す</button>' : ""}
+          ${canPass ? '<button class="button danger" data-action="pass">パス</button>' : ""}
         </div>
       </div>
       <div class="hand-grid">
@@ -337,7 +490,6 @@ function renderHand() {
     </div>
   `;
 }
-
 function renderRules() {
   const editable = state.room?.permissions?.canEditSettings;
   const categories = {};
@@ -394,6 +546,42 @@ function renderRules() {
     )
     .join("");
 }
+
+function renderInfoModal() {
+  if (state.activeModal !== "info") {
+    return "";
+  }
+
+  const playersByScore = [...state.room.players].sort((left, right) => right.points - left.points || left.seat - right.seat);
+
+  return `
+    <div class="overlay info-modal">
+      <div class="overlay-card modal-card compact-modal">
+        <div class="rule-head modal-heading">
+          <div>
+            <div class="panel-kicker">Info</div>
+            <h2>必要な情報</h2>
+          </div>
+          <button class="button ghost modal-close" data-action="close-modal">閉じる</button>
+        </div>
+        <div class="modal-scroll info-sections">
+          <section class="info-section">
+            <div class="panel-kicker">順位</div>
+            <div class="metric-stack">${playersByScore.map(renderPlayerSummary).join("")}</div>
+          </section>
+          <section class="info-section">
+            <div class="panel-kicker">ルール</div>
+            <div class="rule-columns">${renderRules()}</div>
+          </section>
+          <section class="info-section">
+            <div class="panel-kicker">履歴</div>
+            <div class="history-list">${renderHistory()}</div>
+          </section>
+        </div>
+      </div>
+    </div>
+  `;
+}
 function renderPendingOverlay() {
   const pending = state.room?.pendingEffect;
   if (!pending) {
@@ -449,68 +637,50 @@ function renderJoinOverlay() {
 
 function renderRoom() {
   const room = state.room;
-  const playersByScore = [...room.players].sort((left, right) => right.points - left.points || left.seat - right.seat);
   const canStart = room.permissions?.canStart;
   const selfName = room.self?.nickname || "ゲスト";
 
   return `
     ${renderToast()}
-    <div class="room-shell">
-      <aside class="sidebar">
-        <section class="panel">
-          <div class="panel-kicker">Table</div>
-          <h1 class="brand">大富豪アリーナ</h1>
-          <div class="meta-row">
-            <span class="code-chip">部屋 ${escapeHtml(room.roomId)}</span>
-            <span class="badge">${escapeHtml(selfName)}</span>
+    <div class="room-shell simple-room">
+      <section class="panel room-header compact-header">
+        <div class="table-header compact-table-header">
+          <div>
+            <div class="panel-kicker">Room</div>
+            <div class="room-title-row">
+              <span class="code-chip">${escapeHtml(room.roomId)}</span>
+              <span class="badge">${escapeHtml(selfName)}</span>
+            </div>
           </div>
-          <div class="top-actions" style="margin-top:14px;">
-            <button class="button secondary" data-action="copy-link">招待URLをコピー</button>
-            <button class="button ghost" data-action="refresh-state">更新</button>
-            <button class="button primary" data-action="start-round" ${canStart ? "" : "disabled"}>${room.status === "round_over" ? "次ラウンド開始" : "ゲーム開始"}</button>
+          <div class="top-actions header-actions compact-actions">
+            <button class="button ghost" data-action="open-modal" data-modal="info">情報</button>
+            <button class="button ghost" data-action="copy-link">共有</button>
+            ${canStart ? `<button class="button primary" data-action="start-round">${room.status === "round_over" ? "次の対戦" : "開始"}</button>` : ""}
           </div>
-        </section>
-        <section class="panel">
-          <div class="panel-kicker">Ranking</div>
-          <div class="metric-stack">
-            ${playersByScore.map(renderPlayerSummary).join("")}
-          </div>
-        </section>
-        <section class="panel">
-          <div class="panel-kicker">Round History</div>
-          <div class="history-list">${renderHistory()}</div>
-        </section>
-      </aside>
-      <section class="board-stage">
-        <div class="board-top">
-          ${renderBoardMetrics()}
-        </div>
-        <div class="seat-layer">
-          ${room.players.map(renderSeatCard).join("")}
-        </div>
-        <div class="center-pile">
-          ${renderPile()}
-        </div>
-        <div class="hand-zone">
-          ${renderHand()}
         </div>
       </section>
-      <aside class="sidebar">
-        <section class="panel">
-          <div class="panel-kicker">Rule Deck</div>
-          <div class="rule-columns">${renderRules()}</div>
+      <section class="panel board-panel">
+        <section class="board-stage simple-board-stage">
+          <div class="board-top">
+            ${renderBoardMetrics()}
+          </div>
+          <div class="seat-layer">
+            ${room.players.map(renderSeatCard).join("")}
+          </div>
+          <div class="center-pile">
+            ${renderPile()}
+          </div>
+          <div class="hand-zone">
+            ${renderHand()}
+          </div>
         </section>
-        <section class="panel">
-          <div class="panel-kicker">Action Log</div>
-          <div class="log-list">${renderActionLog()}</div>
-        </section>
-      </aside>
+      </section>
     </div>
+    ${renderInfoModal()}
     ${room.requiresJoin ? renderJoinOverlay() : ""}
     ${renderPendingOverlay()}
   `;
 }
-
 function render() {
   if (!state.roomId) {
     root.innerHTML = renderLanding();
@@ -678,6 +848,7 @@ async function handleAction(action, target) {
       case "leave-room":
         setRoomId("");
         state.room = null;
+        state.activeModal = "";
         clearSelections();
         render();
         return;
@@ -742,6 +913,12 @@ async function handleAction(action, target) {
         render();
         return;
       }
+      case "open-modal":
+        openModal(target.dataset.modal);
+        return;
+      case "close-modal":
+        closeModal();
+        return;
       case "toggle-rule":
         await updateRule(target.dataset.ruleKey, target.dataset.next === "true");
         return;
@@ -752,15 +929,18 @@ async function handleAction(action, target) {
     showMessage(error.message);
   }
 }
-
 document.addEventListener("click", (event) => {
+  if (event.target.matches(".info-modal")) {
+    closeModal();
+    return;
+  }
+
   const target = event.target.closest("[data-action]");
   if (!target) {
     return;
   }
   handleAction(target.dataset.action, target);
 });
-
 document.addEventListener("change", async (event) => {
   const target = event.target;
   if (!target.matches(".rule-select")) {
