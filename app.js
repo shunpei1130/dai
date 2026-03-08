@@ -84,10 +84,10 @@ function escapeHtml(value) {
 function normalizeErrorMessage(message) {
   const text = String(message || "");
   if (!text) {
-    return "Something went wrong.";
+    return "エラーが発生しました。";
   }
   if (text.includes("UPSTASH_REDIS") || text.includes("Persistent Redis storage")) {
-    return "Persistent Redis storage is not configured. Add the required environment variables.";
+    return "永続化用の Redis が設定されていません。必要な環境変数を設定してください。";
   }
   return text;
 }
@@ -102,7 +102,7 @@ async function api(path, body = null, method = "POST") {
   const response = await fetch(path, options);
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(normalizeErrorMessage(payload.error || "Something went wrong."));
+    throw new Error(normalizeErrorMessage(payload.error || "エラーが発生しました。"));
   }
   return payload;
 }
@@ -338,25 +338,25 @@ function renderLanding() {
       <article class="hero-card form-card landing-card">
         <div>
           <div class="panel-kicker">Daifugo Arena</div>
-          <h1 class="brand landing-title">Create or join a room</h1>
-          <p class="muted landing-copy">Pick a nickname, start a table, or enter a room code to jump in.</p>
+          <h1 class="brand landing-title">部屋を作成 / 参加</h1>
+          <p class="muted landing-copy">ニックネームを決めて、新しく卓を作るか、部屋コードを入力して参加します。</p>
         </div>
         ${renderToast()}
         <label>
-          <div class="muted">Nickname</div>
-          <input id="nickname-input" class="input" maxlength="20" placeholder="Your name" value="${escapeHtml(getSavedNickname())}" />
+          <div class="muted">ニックネーム</div>
+          <input id="nickname-input" class="input" maxlength="20" placeholder="名前を入力" value="${escapeHtml(getSavedNickname())}" />
         </label>
         <div class="setup-grid">
           <section class="setup-section primary-setup">
-            <strong>Create a new room</strong>
-            <div class="muted helper-text">Start a table and share the link with other players.</div>
-            <button class="button primary setup-button" data-action="create-room">Create room</button>
+            <strong>新しく部屋を作る</strong>
+            <div class="muted helper-text">卓を作成して、共有リンクを他のプレイヤーに送れます。</div>
+            <button class="button primary setup-button" data-action="create-room">部屋を作成</button>
           </section>
-          <div class="divider-label">or</div>
+          <div class="divider-label">または</div>
           <section class="setup-section secondary-setup">
-            <strong>Join with a room code</strong>
-            <input id="room-code-input" class="input" maxlength="6" placeholder="6-character room code" />
-            <button class="button secondary setup-button" data-action="jump-room">Join room</button>
+            <strong>部屋コードで参加</strong>
+            <input id="room-code-input" class="input" maxlength="6" placeholder="6文字の部屋コード" />
+            <button class="button secondary setup-button" data-action="jump-room">部屋に参加</button>
           </section>
         </div>
       </article>
@@ -370,7 +370,7 @@ function renderPlayerSummary(player) {
         <strong>${escapeHtml(player.nickname)}</strong>
         <span class="badge">${player.points}pt</span>
       </div>
-      <div class="muted">${player.isBot ? "Bot" : "Human"} / 謇区惆 ${player.handCount}譫・/ ${player.lastRoundRole || "蠕・ｩ滉ｸｭ"}</div>
+      <div class="muted">${player.isBot ? "Bot" : "Human"} / 残り手札 ${player.handCount}枚 / ${player.lastRoundRole || "役職なし"}</div>
     </div>
   `;
 }
@@ -378,7 +378,7 @@ function renderPlayerSummary(player) {
 function renderHistory() {
   const rounds = state.room?.history || [];
   if (rounds.length === 0) {
-    return `<div class="empty">縺ｾ縺繝ｩ繧ｦ繝ｳ繝臥ｵ先棡縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/div>`;
+    return `<div class="empty">まだラウンド履歴はありません。</div>`;
   }
 
   return rounds
@@ -407,7 +407,7 @@ function renderHistory() {
 function renderActionLog() {
   const items = [...(state.room?.game?.actionLog || [])].slice(-8).reverse();
   if (items.length === 0) {
-    return `<div class="empty">繝ｭ繧ｰ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ縲・/div>`;
+    return `<div class="empty">ログはまだありません。</div>`;
   }
 
   return items
@@ -470,12 +470,12 @@ function renderSeatCard(player) {
 function renderPile() {
   const combo = state.room?.game?.currentCombo;
   if (!combo) {
-    return `<div class="empty">Play a card to start the pile.</div>`;
+    return `<div class="empty">カードを出して場を開始してください。</div>`;
   }
 
   return `
     <div class="pile-display">
-      <div class="panel-kicker">Current Combo</div>
+      <div class="panel-kicker">現在の場</div>
       <h2 class="pile-title">${escapeHtml(combo.text)}</h2>
       <div class="pile-cards ${state.pilePulse ? "live" : ""}">
         ${combo.cards
@@ -496,20 +496,20 @@ function renderBoardMetrics() {
   const turnPlayer = room.players.find((player) => player.isCurrent);
   const flags = [];
   if (room.game.revolution) {
-    flags.push("Revolution");
+    flags.push("革命");
   }
   if (room.game.elevenBack) {
-    flags.push("11 Back");
+    flags.push("11バック");
   }
   if (room.game.lockedSuits?.length) {
-    flags.push(`Lock ${room.game.lockedSuits.join(" ")}`);
+    flags.push(`縛り ${room.game.lockedSuits.join(" ")}`);
   }
 
   return `
     <div class="status-strip">
       <div class="status-main ${room.permissions.canPlay ? "active" : ""}">
-        <strong>${room.permissions.canPlay ? "Your turn" : `${escapeHtml(turnPlayer?.nickname || "Waiting")}'s turn`}</strong>
-        <span>${room.permissions.canPlay ? "Select cards and drop them into the center." : "Watch the table and get ready."}</span>
+        <strong>${room.permissions.canPlay ? "あなたのターン" : `${escapeHtml(turnPlayer?.nickname || "待機中")} のターン`}</strong>
+        <span>${room.permissions.canPlay ? "カードを選んで中央に出してください。" : "場の流れを見て、次の手番に備えましょう。"}</span>
       </div>
       ${flags.length ? `<div class="status-flags">${flags.map((flag) => `<span class="badge">${escapeHtml(flag)}</span>`).join("")}</div>` : ""}
     </div>
@@ -529,13 +529,13 @@ function renderHand() {
     <div class="hand-panel">
       <div class="rule-head hand-header">
         <div>
-          <strong>Hand ${hand.length}</strong>
-          <div class="muted hand-copy">${selectedCount ? `${selectedCount} selected` : canAct ? "Choose a combo to attack." : "Waiting for the next turn."}</div>
+          <strong>手札 ${hand.length}</strong>
+          <div class="muted hand-copy">${selectedCount ? `${selectedCount}枚選択中` : canAct ? "出す組み合わせを選んでください。" : "次の手番を待っています。"}</div>
         </div>
         <div class="hand-actions">
-          ${selectedCount ? '<button class="button secondary" data-action="clear-selection">Clear</button>' : ""}
-          ${canAct ? '<button class="button primary" data-action="play-selected">Play</button>' : ""}
-          ${canPass ? '<button class="button danger" data-action="pass">Pass</button>' : ""}
+          ${selectedCount ? '<button class="button secondary" data-action="clear-selection">解除</button>' : ""}
+          ${canAct ? '<button class="button primary" data-action="play-selected">出す</button>' : ""}
+          ${canPass ? '<button class="button danger" data-action="pass">パス</button>' : ""}
         </div>
       </div>
       <div class="hand-grid">
@@ -624,22 +624,22 @@ function renderInfoModal() {
       <div class="overlay-card modal-card compact-modal">
         <div class="rule-head modal-heading">
           <div>
-            <div class="panel-kicker">Info</div>
-            <h2>Table overview</h2>
+            <div class="panel-kicker">情報</div>
+            <h2>卓の状況</h2>
           </div>
-          <button class="button ghost modal-close" data-action="close-modal">Close</button>
+          <button class="button ghost modal-close" data-action="close-modal">閉じる</button>
         </div>
         <div class="modal-scroll info-sections">
           <section class="info-section">
-            <div class="panel-kicker">Standings</div>
+            <div class="panel-kicker">順位表</div>
             <div class="metric-stack">${playersByScore.map(renderPlayerSummary).join("")}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">Rules</div>
+            <div class="panel-kicker">ルール</div>
             <div class="rule-columns">${renderRules()}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">History</div>
+            <div class="panel-kicker">履歴</div>
             <div class="history-list">${renderHistory()}</div>
           </section>
         </div>
@@ -656,15 +656,15 @@ function renderPendingOverlay() {
 
   const hand = state.room.self.hand || [];
   const heading = pending.type === "give"
-    ? `Choose ${pending.count} card${pending.count > 1 ? "s" : ""} for ${pending.targetNickname}`
-    : `Choose ${pending.count} card${pending.count > 1 ? "s" : ""}`;
+    ? `${pending.targetNickname} に渡すカードを ${pending.count} 枚選んでください`
+    : `${pending.count} 枚選んでください`;
 
   return `
     <div class="overlay">
       <div class="overlay-card">
-        <div class="panel-kicker">Special Effect</div>
+        <div class="panel-kicker">特殊効果</div>
         <h2>${escapeHtml(heading)}</h2>
-        <p class="muted">Select exactly ${pending.count} card${pending.count > 1 ? "s" : ""} to resolve the effect.</p>
+        <p class="muted">効果を解決するには、ちょうど ${pending.count} 枚選択してください。</p>
         <div class="hand-grid">
           ${hand
             .map((card, index) =>
@@ -679,8 +679,8 @@ function renderPendingOverlay() {
             .join("")}
         </div>
         <div class="top-actions" style="margin-top:16px;">
-          <button class="button secondary" data-action="clear-pending">Clear</button>
-          <button class="button primary" data-action="resolve-effect">Resolve</button>
+          <button class="button secondary" data-action="clear-pending">解除</button>
+          <button class="button primary" data-action="resolve-effect">決定</button>
         </div>
       </div>
     </div>
@@ -692,12 +692,12 @@ function renderJoinOverlay() {
   return `
     <div class="join-overlay">
       <div class="overlay-card">
-        <div class="panel-kicker">Join Room</div>
-        <h2>${locked ? "This room is locked to current players." : "Enter a nickname to join the table."}</h2>
-        <p class="muted">${locked ? "Only players who were already seated can continue in this round." : "If a seat is open, you can jump in immediately."}</p>
-        ${locked ? "" : `<input id="join-nickname-input" class="input" maxlength="20" value="${escapeHtml(getSavedNickname())}" placeholder="Nickname" />`}
+        <div class="panel-kicker">部屋に参加</div>
+        <h2>${locked ? "この部屋は現在の参加者のみ継続できます。" : "参加するニックネームを入力してください。"}</h2>
+        <p class="muted">${locked ? "このラウンドでは、すでに着席しているプレイヤーのみ参加できます。" : "空いている席があれば、すぐに参加できます。"}</p>
+        ${locked ? "" : `<input id="join-nickname-input" class="input" maxlength="20" value="${escapeHtml(getSavedNickname())}" placeholder="ニックネーム" />`}
         <div class="top-actions" style="margin-top:16px;">
-          ${locked ? `<button class="button primary" data-action="leave-room">Back</button>` : `<button class="button primary" data-action="join-room">Join</button>`}
+          ${locked ? `<button class="button primary" data-action="leave-room">戻る</button>` : `<button class="button primary" data-action="join-room">参加する</button>`}
         </div>
       </div>
     </div>
@@ -707,7 +707,7 @@ function renderJoinOverlay() {
 function renderRoom() {
   const room = state.room;
   const canStart = room.permissions?.canStart;
-  const selfName = room.self?.nickname || "Guest";
+  const selfName = room.self?.nickname || "ゲスト";
 
   return `
     ${renderToast()}
@@ -715,16 +715,16 @@ function renderRoom() {
       <section class="panel room-header compact-header">
         <div class="table-header compact-table-header">
           <div>
-            <div class="panel-kicker">Room</div>
+            <div class="panel-kicker">部屋</div>
             <div class="room-title-row">
               <span class="code-chip">${escapeHtml(room.roomId)}</span>
               <span class="badge">${escapeHtml(selfName)}</span>
             </div>
           </div>
           <div class="top-actions header-actions compact-actions">
-            <button class="button ghost" data-action="open-modal" data-modal="info">Info</button>
-            <button class="button ghost" data-action="copy-link">Copy Link</button>
-            ${canStart ? `<button class="button primary" data-action="start-round">${room.status === "round_over" ? "Next Round" : "Start Round"}</button>` : ""}
+            <button class="button ghost" data-action="open-modal" data-modal="info">情報</button>
+            <button class="button ghost" data-action="copy-link">リンクをコピー</button>
+            ${canStart ? `<button class="button primary" data-action="start-round">${room.status === "round_over" ? "次のラウンド" : "ラウンド開始"}</button>` : ""}
           </div>
         </div>
       </section>
@@ -761,8 +761,8 @@ function render() {
     root.innerHTML = `
       <section class="hero">
         <article class="hero-card form-card">
-          <div class="panel-kicker">Loading</div>
-          <h1 class="brand">Loading room...</h1>
+          <div class="panel-kicker">読み込み中</div>
+          <h1 class="brand">部屋を読み込んでいます...</h1>
           ${renderToast()}
         </article>
       </section>
@@ -905,7 +905,7 @@ async function handleAction(action, target) {
       case "jump-room": {
         const code = document.getElementById("room-code-input")?.value?.trim()?.toUpperCase();
         if (!code) {
-          throw new Error("Enter a room code.");
+          throw new Error("部屋コードを入力してください。");
         }
         setRoomId(code);
         await refreshState();
@@ -924,7 +924,7 @@ async function handleAction(action, target) {
         return;
       case "copy-link":
         await navigator.clipboard.writeText(shareUrl());
-        showMessage("Room link copied.");
+        showMessage("部屋のリンクをコピーしました。");
         return;
       case "refresh-state":
         await refreshState();
@@ -948,7 +948,7 @@ async function handleAction(action, target) {
         if (!state.room?.permissions?.canPlay) {
           await refreshState(true);
           if (!state.room?.permissions?.canPlay) {
-            throw new Error("It is no longer your turn. The table has been refreshed.");
+            throw new Error("すでに手番が変わっていました。画面を更新しました。");
           }
         }
 
@@ -956,11 +956,11 @@ async function handleAction(action, target) {
         const handIds = new Set(state.room?.self?.hand?.map((card) => card.id) || []);
         const cardIds = [...state.selected].filter((cardId) => handIds.has(cardId));
         if (cardIds.length === 0) {
-          throw new Error("Select at least one card before playing.");
+          throw new Error("カードを1枚以上選択してください。");
         }
         if (cardIds.length !== state.selected.size) {
           state.selected = new Set(cardIds);
-          throw new Error("Some selected cards are no longer in your hand. Choose again.");
+          throw new Error("選択したカードの一部が手札にありません。選び直してください。");
         }
         const cards = (state.room?.self?.hand || []).filter((card) => cardIds.includes(card.id));
         triggerPlayAnimation(cards);
@@ -989,7 +989,7 @@ async function handleAction(action, target) {
       case "resolve-effect": {
         const cardIds = [...state.pendingSelected];
         if (!state.room?.pendingEffect || cardIds.length !== state.room.pendingEffect.count) {
-          throw new Error(`Select exactly ${state.room?.pendingEffect?.count || 0} cards.`);
+          throw new Error(`ちょうど ${state.room?.pendingEffect?.count || 0} 枚選択してください。`);
         }
         const payload = await api("/api/resolve-effect", { roomId: state.roomId, clientId: state.clientId, cardIds });
         setRoomState(payload.state);
@@ -1051,7 +1051,7 @@ async function init() {
     const response = await fetch("/data/rules-config.json");
     state.rulesConfig = await response.json();
   } catch (error) {
-    showMessage("Failed to load rule settings.");
+    showMessage("ルール設定の読み込みに失敗しました。");
   }
 
   if (state.roomId) {
