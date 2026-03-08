@@ -494,6 +494,8 @@ function renderPile() {
 function renderBoardMetrics() {
   const room = state.room;
   const turnPlayer = room.players.find((player) => player.isCurrent);
+  const permissions = room.permissions || {};
+  const canPlay = Boolean(permissions.canPlay);
   const flags = [];
   if (room.game.revolution) {
     flags.push("革命");
@@ -507,9 +509,9 @@ function renderBoardMetrics() {
 
   return `
     <div class="status-strip">
-      <div class="status-main ${room.permissions.canPlay ? "active" : ""}">
-        <strong>${room.permissions.canPlay ? "あなたのターン" : `${escapeHtml(turnPlayer?.nickname || "待機中")} のターン`}</strong>
-        <span>${room.permissions.canPlay ? "カードを選んで中央に出してください。" : "場の流れを見て、次の手番に備えましょう。"}</span>
+      <div class="status-main ${canPlay ? "active" : ""}">
+        <strong>${canPlay ? "あなたのターン" : `${escapeHtml(turnPlayer?.nickname || "待機中")} のターン`}</strong>
+        <span>${canPlay ? "カードを選んで中央に出してください。" : "場の流れを見て、次の手番に備えましょう。"}</span>
       </div>
       ${flags.length ? `<div class="status-flags">${flags.map((flag) => `<span class="badge">${escapeHtml(flag)}</span>`).join("")}</div>` : ""}
     </div>
@@ -520,8 +522,9 @@ function renderHand() {
     return "";
   }
 
-  const canAct = state.room.permissions.canPlay;
-  const canPass = state.room.permissions.canPass;
+  const permissions = state.room.permissions || {};
+  const canAct = Boolean(permissions.canPlay);
+  const canPass = Boolean(permissions.canPass);
   const hand = state.room.self.hand || [];
   const selectedCount = state.selected.size;
 
