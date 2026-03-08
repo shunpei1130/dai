@@ -4,6 +4,6 @@
   "private": true,
   "description": "Room-based Daifugo web app for Vercel",
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }
