@@ -724,8 +724,8 @@ function renderRoom() {
           <div class="top-actions header-actions compact-actions">
             <button class="button ghost" data-action="open-modal" data-modal="info">情報</button>
             <button class="button ghost" data-action="copy-link">リンクをコピー</button>
+            <button class="button ghost" data-action="leave-room">部屋を抜ける</button>
             ${canStart ? `<button class="button primary" data-action="start-round">${room.status === "round_over" ? "次のラウンド" : "ラウンド開始"}</button>` : ""}
-          </div>
         </div>
       </section>
       <section class="panel board-panel">
