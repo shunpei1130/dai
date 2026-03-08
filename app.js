@@ -1,4 +1,4 @@
-﻿const root = document.getElementById("app");
+const root = document.getElementById("app");
 const flashLayer = document.getElementById("flash-layer");
 
 const state = {
@@ -84,10 +84,10 @@ function escapeHtml(value) {
 function normalizeErrorMessage(message) {
   const text = String(message || "");
   if (!text) {
-    return "騾壻ｿ｡縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
+    return "Something went wrong.";
   }
   if (text.includes("UPSTASH_REDIS") || text.includes("Persistent Redis storage")) {
-    return "驛ｨ螻九ｒ菴懈・縺ｧ縺阪∪縺帙ｓ縲よ凾髢薙ｒ縺翫＞縺ｦ蜀榊ｺｦ縺願ｩｦ縺励￥縺縺輔＞縲・;
+    return "Persistent Redis storage is not configured. Add the required environment variables.";
   }
   return text;
 }
@@ -102,7 +102,7 @@ async function api(path, body = null, method = "POST") {
   const response = await fetch(path, options);
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(normalizeErrorMessage(payload.error || "騾壻ｿ｡縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・));
+    throw new Error(normalizeErrorMessage(payload.error || "Something went wrong."));
   }
   return payload;
 }
@@ -338,25 +338,25 @@ function renderLanding() {
       <article class="hero-card form-card landing-card">
         <div>
           <div class="panel-kicker">Daifugo Arena</div>
-          <h1 class="brand landing-title">驛ｨ螻九ｒ菴懊ｋ / 蜈･繧・/h1>
-          <p class="muted landing-copy">繝九ャ繧ｯ繝阪・繝繧貞・繧後※縲√☆縺舌↓蟋九ａ縺ｾ縺吶・/p>
+          <h1 class="brand landing-title">Create or join a room</h1>
+          <p class="muted landing-copy">Pick a nickname, start a table, or enter a room code to jump in.</p>
         </div>
         ${renderToast()}
         <label>
-          <div class="muted">繝九ャ繧ｯ繝阪・繝</div>
-          <input id="nickname-input" class="input" maxlength="20" placeholder="萓・ 縺励ｅ繧・ value="${escapeHtml(getSavedNickname())}" />
+          <div class="muted">Nickname</div>
+          <input id="nickname-input" class="input" maxlength="20" placeholder="Your name" value="${escapeHtml(getSavedNickname())}" />
         </label>
         <div class="setup-grid">
           <section class="setup-section primary-setup">
-            <strong>譁ｰ縺励￥蟋九ａ繧・/strong>
-            <div class="muted helper-text">縺吶＄驕翫・縺溘＞縺ｨ縺阪・縺薙■繧・/div>
-            <button class="button primary setup-button" data-action="create-room">驛ｨ螻九ｒ菴懊ｋ</button>
+            <strong>Create a new room</strong>
+            <div class="muted helper-text">Start a table and share the link with other players.</div>
+            <button class="button primary setup-button" data-action="create-room">Create room</button>
           </section>
-          <div class="divider-label">縺ｾ縺溘・</div>
+          <div class="divider-label">or</div>
           <section class="setup-section secondary-setup">
-            <strong>諡帛ｾ・さ繝ｼ繝峨〒蜈･繧・/strong>
-            <input id="room-code-input" class="input" maxlength="6" placeholder="6譁・ｭ励・驛ｨ螻九さ繝ｼ繝・ />
-            <button class="button secondary setup-button" data-action="jump-room">驛ｨ螻九↓蜈･繧・/button>
+            <strong>Join with a room code</strong>
+            <input id="room-code-input" class="input" maxlength="6" placeholder="6-character room code" />
+            <button class="button secondary setup-button" data-action="jump-room">Join room</button>
           </section>
         </div>
       </article>
@@ -625,21 +625,21 @@ function renderInfoModal() {
         <div class="rule-head modal-heading">
           <div>
             <div class="panel-kicker">Info</div>
-            <h2>蠢・ｦ√↑諠・ｱ</h2>
+            <h2>Table overview</h2>
           </div>
-          <button class="button ghost modal-close" data-action="close-modal">髢峨§繧・/button>
+          <button class="button ghost modal-close" data-action="close-modal">Close</button>
         </div>
         <div class="modal-scroll info-sections">
           <section class="info-section">
-            <div class="panel-kicker">鬆・ｽ・/div>
+            <div class="panel-kicker">Standings</div>
             <div class="metric-stack">${playersByScore.map(renderPlayerSummary).join("")}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">繝ｫ繝ｼ繝ｫ</div>
+            <div class="panel-kicker">Rules</div>
             <div class="rule-columns">${renderRules()}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">螻･豁ｴ</div>
+            <div class="panel-kicker">History</div>
             <div class="history-list">${renderHistory()}</div>
           </section>
         </div>
@@ -647,6 +647,7 @@ function renderInfoModal() {
     </div>
   `;
 }
+
 function renderPendingOverlay() {
   const pending = state.room?.pendingEffect;
   if (!pending) {
@@ -761,7 +762,7 @@ function render() {
       <section class="hero">
         <article class="hero-card form-card">
           <div class="panel-kicker">Loading</div>
-          <h1 class="brand">驛ｨ螻九ｒ隱ｭ縺ｿ霎ｼ縺ｿ荳ｭ窶ｦ</h1>
+          <h1 class="brand">Loading room...</h1>
           ${renderToast()}
         </article>
       </section>
@@ -904,7 +905,7 @@ async function handleAction(action, target) {
       case "jump-room": {
         const code = document.getElementById("room-code-input")?.value?.trim()?.toUpperCase();
         if (!code) {
-          throw new Error("驛ｨ螻九さ繝ｼ繝峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・);
+          throw new Error("Enter a room code.");
         }
         setRoomId(code);
         await refreshState();
@@ -923,7 +924,7 @@ async function handleAction(action, target) {
         return;
       case "copy-link":
         await navigator.clipboard.writeText(shareUrl());
-        showMessage("諡帛ｾ・RL繧偵さ繝斐・縺励∪縺励◆縲・);
+        showMessage("Room link copied.");
         return;
       case "refresh-state":
         await refreshState();
@@ -988,7 +989,7 @@ async function handleAction(action, target) {
       case "resolve-effect": {
         const cardIds = [...state.pendingSelected];
         if (!state.room?.pendingEffect || cardIds.length !== state.room.pendingEffect.count) {
-          throw new Error(`${state.room?.pendingEffect?.count || 0}譫夐∈謚槭＠縺ｦ縺上□縺輔＞縲Ａ);
+          throw new Error(`Select exactly ${state.room?.pendingEffect?.count || 0} cards.`);
         }
         const payload = await api("/api/resolve-effect", { roomId: state.roomId, clientId: state.clientId, cardIds });
         setRoomState(payload.state);
@@ -1050,7 +1051,7 @@ async function init() {
     const response = await fetch("/data/rules-config.json");
     state.rulesConfig = await response.json();
   } catch (error) {
-    showMessage("繝ｫ繝ｼ繝ｫ險ｭ螳壹・隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・);
+    showMessage("Failed to load rule settings.");
   }
 
   if (state.roomId) {
@@ -1060,7 +1061,6 @@ async function init() {
 
   render();
 }
-
 window.addEventListener("beforeunload", () => {
   if (state.polling) {
     clearInterval(state.polling);
