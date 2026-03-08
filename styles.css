@@ -1661,3 +1661,474 @@ button {
     font-size: 0.58rem;
   }
 }
+
+.seat-hand {
+  --seat-hand-card-width: 30px;
+  --seat-hand-card-height: 42px;
+  --seat-hand-step: 10px;
+  position: relative;
+  height: var(--seat-hand-card-height);
+  margin-top: 10px;
+}
+
+.seat-hand-card {
+  position: absolute;
+  top: 0;
+  left: calc(50% - (var(--seat-hand-card-width) / 2) - ((var(--hand-total) - 1) * var(--seat-hand-step) / 2));
+  width: var(--seat-hand-card-width);
+  height: var(--seat-hand-card-height);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 233, 180, 0.18);
+  background:
+    linear-gradient(145deg, rgba(12, 29, 22, 0.96), rgba(24, 61, 44, 0.92)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+  transform: translateX(calc(var(--hand-index) * var(--seat-hand-step)));
+  overflow: hidden;
+}
+
+.seat-hand-card::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 237, 181, 0.16);
+  background:
+    radial-gradient(circle at center, rgba(255, 218, 140, 0.2), transparent 58%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 4px, transparent 4px 8px);
+}
+
+.seat-hand-card::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 231, 172, 0.22);
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .room-shell.simple-room {
+    min-height: calc(100dvh - 20px);
+    height: calc(100dvh - 20px);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .room-header {
+    gap: 8px;
+  }
+
+  .board-panel {
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .simple-board-stage {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .toast,
+  .room-header .panel-kicker,
+  .pile-display .panel-kicker,
+  .mini-meta,
+  .hand-copy,
+  .status-main span {
+    display: none;
+  }
+
+  .compact-header {
+    padding: 10px 12px;
+  }
+
+  .table-header {
+    gap: 10px;
+  }
+
+  .room-title-row {
+    margin-top: 0;
+  }
+
+  .compact-actions {
+    gap: 6px;
+  }
+
+  .compact-actions .button,
+  .header-actions .button {
+    padding: 9px 10px;
+    font-size: 0.78rem;
+  }
+
+  .badge,
+  .code-chip {
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+
+  .board-top {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .status-strip {
+    gap: 6px;
+  }
+
+  .status-main {
+    gap: 0;
+    padding: 8px 12px;
+    min-height: 34px;
+    align-items: center;
+  }
+
+  .status-main strong {
+    font-size: 0.84rem;
+  }
+
+  .status-flags {
+    gap: 6px;
+  }
+
+  .status-flags .badge {
+    padding: 4px 7px;
+    font-size: 0.68rem;
+  }
+
+  .seat-card {
+    width: min(30vw, 124px);
+    padding: 8px 9px;
+    border-radius: 14px;
+  }
+
+  .seat-head {
+    gap: 6px;
+  }
+
+  .seat-name {
+    max-width: none;
+    font-size: 0.78rem;
+  }
+
+  .seat-head .badge {
+    padding: 4px 7px;
+    font-size: 0.68rem;
+  }
+
+  .meta-row {
+    gap: 6px;
+  }
+
+  .meta-row .badge {
+    padding: 4px 6px;
+    font-size: 0.62rem;
+  }
+
+  .seat-hand {
+    --seat-hand-card-width: 22px;
+    --seat-hand-card-height: 32px;
+    --seat-hand-step: 7px;
+    margin-top: 8px;
+  }
+
+  .seat-card.north {
+    top: 52px;
+  }
+
+  .seat-card.west,
+  .seat-card.east {
+    top: 112px;
+  }
+
+  .seat-card.south {
+    bottom: 112px;
+  }
+
+  .center-pile {
+    top: 46%;
+    width: calc(100% - 18px);
+  }
+
+  .pile-display {
+    gap: 8px;
+  }
+
+  .pile-title {
+    font-size: clamp(1rem, 4.6vw, 1.3rem);
+  }
+
+  .pile-cards {
+    min-height: 86px;
+    padding: 10px 12px 14px;
+  }
+
+  .mini-card,
+  .burst-face {
+    width: 58px;
+    min-width: 58px;
+    min-height: 84px;
+  }
+
+  .pile-card {
+    margin-left: -20px;
+  }
+
+  .playing-card {
+    border-radius: 14px;
+  }
+
+  .playing-card::before {
+    inset: 4px;
+    border-radius: 10px;
+  }
+
+  .card-corner {
+    left: 8px;
+  }
+
+  .card-corner.top {
+    top: 7px;
+  }
+
+  .card-corner.bottom {
+    right: 8px;
+    bottom: 7px;
+  }
+
+  .card-rank {
+    font-size: 0.78rem;
+  }
+
+  .card-suit {
+    font-size: 0.48rem;
+    letter-spacing: 0.08em;
+  }
+
+  .card-center {
+    left: 9px;
+    right: 9px;
+    gap: 4px;
+  }
+
+  .card-center-mark {
+    font-size: 1.08rem;
+  }
+
+  .card-center-label {
+    font-size: 0.44rem;
+    letter-spacing: 0.12em;
+  }
+
+  .hand-zone {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .hand-panel {
+    padding: 8px 8px 6px;
+    border-radius: 16px;
+  }
+
+  .hand-header {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .hand-header strong {
+    font-size: 0.82rem;
+  }
+
+  .hand-actions {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .hand-actions .button {
+    padding: 8px 10px;
+    font-size: 0.76rem;
+  }
+
+  .hand-grid {
+    padding: 16px 8px 8px 2px;
+    margin: 0 -4px -4px;
+  }
+
+  .card-button {
+    width: 56px;
+    min-width: 56px;
+    min-height: 84px;
+    margin-left: -26px;
+    transform: translateY(8px) rotate(var(--card-tilt, 0deg));
+  }
+
+  .card-button:hover {
+    transform: translateY(-6px) rotate(0deg) scale(1.02);
+  }
+
+  .card-button.selected {
+    transform: translateY(-12px) rotate(0deg) scale(1.04);
+  }
+
+  .play-burst-card {
+    bottom: 120px;
+  }
+
+  .play-burst-core {
+    width: 170px;
+    height: 170px;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell {
+    width: min(100vw - 8px, 1480px);
+    padding-top: 6px;
+    padding-bottom: 8px;
+  }
+
+  .room-shell.simple-room {
+    min-height: calc(100dvh - 14px);
+    height: calc(100dvh - 14px);
+    gap: 8px;
+  }
+
+  .compact-header {
+    padding: 8px 10px;
+  }
+
+  .table-header {
+    gap: 8px;
+  }
+
+  .compact-actions .button,
+  .header-actions .button {
+    padding: 7px 8px;
+    font-size: 0.72rem;
+  }
+
+  .badge,
+  .code-chip {
+    padding: 4px 7px;
+    font-size: 0.68rem;
+  }
+
+  .status-main {
+    padding: 7px 10px;
+    min-height: 30px;
+  }
+
+  .status-main strong {
+    font-size: 0.78rem;
+  }
+
+  .status-flags .badge {
+    font-size: 0.62rem;
+  }
+
+  .seat-card {
+    width: min(29vw, 110px);
+    padding: 7px 8px;
+  }
+
+  .seat-name {
+    font-size: 0.72rem;
+  }
+
+  .seat-head .badge,
+  .meta-row .badge {
+    padding: 3px 5px;
+    font-size: 0.58rem;
+  }
+
+  .seat-hand {
+    --seat-hand-card-width: 18px;
+    --seat-hand-card-height: 26px;
+    --seat-hand-step: 6px;
+    margin-top: 6px;
+  }
+
+  .seat-card.north {
+    top: 44px;
+  }
+
+  .seat-card.west,
+  .seat-card.east {
+    top: 94px;
+  }
+
+  .seat-card.south {
+    bottom: 96px;
+  }
+
+  .center-pile {
+    top: 44%;
+    width: calc(100% - 14px);
+  }
+
+  .pile-title {
+    font-size: 0.92rem;
+  }
+
+  .pile-cards {
+    min-height: 74px;
+    padding: 8px 8px 10px;
+  }
+
+  .mini-card,
+  .burst-face {
+    width: 50px;
+    min-width: 50px;
+    min-height: 72px;
+  }
+
+  .pile-card {
+    margin-left: -18px;
+  }
+
+  .card-rank {
+    font-size: 0.7rem;
+  }
+
+  .card-center-mark {
+    font-size: 0.96rem;
+  }
+
+  .card-center-label {
+    display: none;
+  }
+
+  .hand-panel {
+    padding: 6px 6px 4px;
+  }
+
+  .hand-header strong {
+    font-size: 0.76rem;
+  }
+
+  .hand-actions .button {
+    padding: 7px 8px;
+    font-size: 0.7rem;
+  }
+
+  .hand-grid {
+    padding: 12px 6px 6px 2px;
+  }
+
+  .card-button {
+    width: 48px;
+    min-width: 48px;
+    min-height: 72px;
+    margin-left: -22px;
+  }
+
+  .play-burst-card {
+    bottom: 104px;
+  }
+}

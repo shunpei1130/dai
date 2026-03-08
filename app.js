@@ -1,4 +1,4 @@
-const root = document.getElementById("app");
+﻿const root = document.getElementById("app");
 const flashLayer = document.getElementById("flash-layer");
 
 const state = {
@@ -84,10 +84,10 @@ function escapeHtml(value) {
 function normalizeErrorMessage(message) {
   const text = String(message || "");
   if (!text) {
-    return "通信に失敗しました。";
+    return "騾壻ｿ｡縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
   }
   if (text.includes("UPSTASH_REDIS") || text.includes("Persistent Redis storage")) {
-    return "部屋を作成できません。時間をおいて再度お試しください。";
+    return "驛ｨ螻九ｒ菴懈・縺ｧ縺阪∪縺帙ｓ縲よ凾髢薙ｒ縺翫＞縺ｦ蜀榊ｺｦ縺願ｩｦ縺励￥縺縺輔＞縲・;
   }
   return text;
 }
@@ -102,7 +102,7 @@ async function api(path, body = null, method = "POST") {
   const response = await fetch(path, options);
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(normalizeErrorMessage(payload.error || "通信に失敗しました。"));
+    throw new Error(normalizeErrorMessage(payload.error || "騾壻ｿ｡縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・));
   }
   return payload;
 }
@@ -208,6 +208,40 @@ function triggerPlayAnimation(cards) {
   render();
 }
 
+function clearPlayAnimation() {
+  if (state.playAnimationTimer) {
+    clearTimeout(state.playAnimationTimer);
+    state.playAnimationTimer = null;
+  }
+  state.playAnimation = null;
+}
+
+async function syncRoomAfterActionError(action) {
+  if (!state.roomId) {
+    return;
+  }
+
+  const syncSensitiveActions = new Set([
+    "jump-room",
+    "join-room",
+    "refresh-state",
+    "start-round",
+    "play-selected",
+    "pass",
+    "resolve-effect"
+  ]);
+
+  if (!syncSensitiveActions.has(action)) {
+    return;
+  }
+
+  try {
+    await refreshState(true);
+  } catch {
+    // Preserve the original action error if room sync also fails.
+  }
+}
+
 function renderPlayingCard(
   card,
   {
@@ -304,25 +338,25 @@ function renderLanding() {
       <article class="hero-card form-card landing-card">
         <div>
           <div class="panel-kicker">Daifugo Arena</div>
-          <h1 class="brand landing-title">部屋を作る / 入る</h1>
-          <p class="muted landing-copy">ニックネームを入れて、すぐに始めます。</p>
+          <h1 class="brand landing-title">驛ｨ螻九ｒ菴懊ｋ / 蜈･繧・/h1>
+          <p class="muted landing-copy">繝九ャ繧ｯ繝阪・繝繧貞・繧後※縲√☆縺舌↓蟋九ａ縺ｾ縺吶・/p>
         </div>
         ${renderToast()}
         <label>
-          <div class="muted">ニックネーム</div>
-          <input id="nickname-input" class="input" maxlength="20" placeholder="例: しゅん" value="${escapeHtml(getSavedNickname())}" />
+          <div class="muted">繝九ャ繧ｯ繝阪・繝</div>
+          <input id="nickname-input" class="input" maxlength="20" placeholder="萓・ 縺励ｅ繧・ value="${escapeHtml(getSavedNickname())}" />
         </label>
         <div class="setup-grid">
           <section class="setup-section primary-setup">
-            <strong>新しく始める</strong>
-            <div class="muted helper-text">すぐ遊びたいときはこちら</div>
-            <button class="button primary setup-button" data-action="create-room">部屋を作る</button>
+            <strong>譁ｰ縺励￥蟋九ａ繧・/strong>
+            <div class="muted helper-text">縺吶＄驕翫・縺溘＞縺ｨ縺阪・縺薙■繧・/div>
+            <button class="button primary setup-button" data-action="create-room">驛ｨ螻九ｒ菴懊ｋ</button>
           </section>
-          <div class="divider-label">または</div>
+          <div class="divider-label">縺ｾ縺溘・</div>
           <section class="setup-section secondary-setup">
-            <strong>招待コードで入る</strong>
-            <input id="room-code-input" class="input" maxlength="6" placeholder="6文字の部屋コード" />
-            <button class="button secondary setup-button" data-action="jump-room">部屋に入る</button>
+            <strong>諡帛ｾ・さ繝ｼ繝峨〒蜈･繧・/strong>
+            <input id="room-code-input" class="input" maxlength="6" placeholder="6譁・ｭ励・驛ｨ螻九さ繝ｼ繝・ />
+            <button class="button secondary setup-button" data-action="jump-room">驛ｨ螻九↓蜈･繧・/button>
           </section>
         </div>
       </article>
@@ -336,7 +370,7 @@ function renderPlayerSummary(player) {
         <strong>${escapeHtml(player.nickname)}</strong>
         <span class="badge">${player.points}pt</span>
       </div>
-      <div class="muted">${player.isBot ? "Bot" : "Human"} / 手札 ${player.handCount}枚 / ${player.lastRoundRole || "待機中"}</div>
+      <div class="muted">${player.isBot ? "Bot" : "Human"} / 謇区惆 ${player.handCount}譫・/ ${player.lastRoundRole || "蠕・ｩ滉ｸｭ"}</div>
     </div>
   `;
 }
@@ -344,7 +378,7 @@ function renderPlayerSummary(player) {
 function renderHistory() {
   const rounds = state.room?.history || [];
   if (rounds.length === 0) {
-    return `<div class="empty">まだラウンド結果はありません。</div>`;
+    return `<div class="empty">縺ｾ縺繝ｩ繧ｦ繝ｳ繝臥ｵ先棡縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/div>`;
   }
 
   return rounds
@@ -373,7 +407,7 @@ function renderHistory() {
 function renderActionLog() {
   const items = [...(state.room?.game?.actionLog || [])].slice(-8).reverse();
   if (items.length === 0) {
-    return `<div class="empty">ログはまだありません。</div>`;
+    return `<div class="empty">繝ｭ繧ｰ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ縲・/div>`;
   }
 
   return items
@@ -388,6 +422,21 @@ function renderActionLog() {
     .join("");
 }
 
+function renderSeatHand(player, seatClass) {
+  const isSelf = player.id === state.room?.self?.id;
+  if (isSelf || player.handCount <= 0) {
+    return "";
+  }
+
+  return `
+    <div class="seat-hand seat-hand-${seatClass}" aria-label="${player.handCount} cards remaining">
+      ${Array.from(
+        { length: player.handCount },
+        (_, index) => `<span class="seat-hand-card" style="--hand-index:${index}; --hand-total:${player.handCount};"></span>`
+      ).join("")}
+    </div>
+  `;
+}
 function renderSeatCard(player) {
   const seatClass = relativeSeatClass(player);
   const badges = [];
@@ -414,7 +463,7 @@ function renderSeatCard(player) {
         <span class="badge">${player.points}pt</span>
       </div>
       ${badges.length ? `<div class="meta-row">${badges.map((badge) => `<span class="badge">${escapeHtml(badge)}</span>`).join("")}</div>` : ""}
-      <div class="muted mini-meta">${player.handCount} cards</div>
+      ${renderSeatHand(player, seatClass)}
     </article>
   `;
 }
@@ -576,21 +625,21 @@ function renderInfoModal() {
         <div class="rule-head modal-heading">
           <div>
             <div class="panel-kicker">Info</div>
-            <h2>必要な情報</h2>
+            <h2>蠢・ｦ√↑諠・ｱ</h2>
           </div>
-          <button class="button ghost modal-close" data-action="close-modal">閉じる</button>
+          <button class="button ghost modal-close" data-action="close-modal">髢峨§繧・/button>
         </div>
         <div class="modal-scroll info-sections">
           <section class="info-section">
-            <div class="panel-kicker">順位</div>
+            <div class="panel-kicker">鬆・ｽ・/div>
             <div class="metric-stack">${playersByScore.map(renderPlayerSummary).join("")}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">ルール</div>
+            <div class="panel-kicker">繝ｫ繝ｼ繝ｫ</div>
             <div class="rule-columns">${renderRules()}</div>
           </section>
           <section class="info-section">
-            <div class="panel-kicker">履歴</div>
+            <div class="panel-kicker">螻･豁ｴ</div>
             <div class="history-list">${renderHistory()}</div>
           </section>
         </div>
@@ -712,7 +761,7 @@ function render() {
       <section class="hero">
         <article class="hero-card form-card">
           <div class="panel-kicker">Loading</div>
-          <h1 class="brand">部屋を読み込み中…</h1>
+          <h1 class="brand">驛ｨ螻九ｒ隱ｭ縺ｿ霎ｼ縺ｿ荳ｭ窶ｦ</h1>
           ${renderToast()}
         </article>
       </section>
@@ -855,7 +904,7 @@ async function handleAction(action, target) {
       case "jump-room": {
         const code = document.getElementById("room-code-input")?.value?.trim()?.toUpperCase();
         if (!code) {
-          throw new Error("部屋コードを入力してください。");
+          throw new Error("驛ｨ螻九さ繝ｼ繝峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・);
         }
         setRoomId(code);
         await refreshState();
@@ -874,7 +923,7 @@ async function handleAction(action, target) {
         return;
       case "copy-link":
         await navigator.clipboard.writeText(shareUrl());
-        showMessage("招待URLをコピーしました。");
+        showMessage("諡帛ｾ・RL繧偵さ繝斐・縺励∪縺励◆縲・);
         return;
       case "refresh-state":
         await refreshState();
@@ -895,9 +944,22 @@ async function handleAction(action, target) {
         render();
         return;
       case "play-selected": {
-        const cardIds = [...state.selected];
+        if (!state.room?.permissions?.canPlay) {
+          await refreshState(true);
+          if (!state.room?.permissions?.canPlay) {
+            throw new Error("It is no longer your turn. The table has been refreshed.");
+          }
+        }
+
+        normalizeSelectionAgainstHand();
+        const handIds = new Set(state.room?.self?.hand?.map((card) => card.id) || []);
+        const cardIds = [...state.selected].filter((cardId) => handIds.has(cardId));
         if (cardIds.length === 0) {
-          throw new Error("カードを選択してください。");
+          throw new Error("Select at least one card before playing.");
+        }
+        if (cardIds.length !== state.selected.size) {
+          state.selected = new Set(cardIds);
+          throw new Error("Some selected cards are no longer in your hand. Choose again.");
         }
         const cards = (state.room?.self?.hand || []).filter((card) => cardIds.includes(card.id));
         triggerPlayAnimation(cards);
@@ -926,7 +988,7 @@ async function handleAction(action, target) {
       case "resolve-effect": {
         const cardIds = [...state.pendingSelected];
         if (!state.room?.pendingEffect || cardIds.length !== state.room.pendingEffect.count) {
-          throw new Error(`${state.room?.pendingEffect?.count || 0}枚選択してください。`);
+          throw new Error(`${state.room?.pendingEffect?.count || 0}譫夐∈謚槭＠縺ｦ縺上□縺輔＞縲Ａ);
         }
         const payload = await api("/api/resolve-effect", { roomId: state.roomId, clientId: state.clientId, cardIds });
         setRoomState(payload.state);
@@ -948,7 +1010,12 @@ async function handleAction(action, target) {
         return;
     }
   } catch (error) {
+    if (action === "play-selected") {
+      clearPlayAnimation();
+    }
+    await syncRoomAfterActionError(action);
     showMessage(error.message);
+    render();
   }
 }
 document.addEventListener("click", (event) => {
@@ -983,7 +1050,7 @@ async function init() {
     const response = await fetch("/data/rules-config.json");
     state.rulesConfig = await response.json();
   } catch (error) {
-    showMessage("ルール設定の読み込みに失敗しました。");
+    showMessage("繝ｫ繝ｼ繝ｫ險ｭ螳壹・隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・);
   }
 
   if (state.roomId) {
@@ -1007,3 +1074,4 @@ window.addEventListener("beforeunload", () => {
 });
 
 init();
+
