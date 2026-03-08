@@ -1,0 +1,258 @@
+[
+  {
+    "key": "stairsEnabled",
+    "label": "階段",
+    "description": "同じスートの連番3枚以上を出せます。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "revolutionEnabled",
+    "label": "革命",
+    "description": "同じ数字4枚以上でカードの強さが反転します。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "stairsRevolutionEnabled",
+    "label": "階段革命",
+    "description": "4枚以上の階段でも革命が起きます。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "eightCutEnabled",
+    "label": "8切り",
+    "description": "8を含む通常出しで場を流します。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "stairsEightCutEnabled",
+    "label": "階段8切り",
+    "description": "8を含む階段でも場を流します。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "suitLockEnabled",
+    "label": "スート縛り",
+    "description": "同じスートが続くと同じスートしか出せなくなります。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "spadeThreeReturnEnabled",
+    "label": "スペ3返し",
+    "description": "ジョーカー単騎に対して♠3で場を流せます。",
+    "category": "公式・基本",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "forbiddenFinishEnabled",
+    "label": "禁止上がり",
+    "description": "ジョーカー、2、革命中の3、8切り、スペ3での上がりを禁止します。",
+    "category": "勝敗補正",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "miyakoOchiEnabled",
+    "label": "都落ち",
+    "description": "前ラウンド大富豪より先に誰かが上がると、大富豪は即座に最下位になります。",
+    "category": "勝敗補正",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "gekokujouEnabled",
+    "label": "下剋上",
+    "description": "前ラウンド大貧民がトップ上がりした時点で順位が反転してラウンド終了します。",
+    "category": "勝敗補正",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "elevenBackEnabled",
+    "label": "11バック",
+    "description": "Jを含む出しで、その場が流れるまでカードの強さが反転します。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "fiveSkipEnabled",
+    "label": "5スキップ",
+    "description": "5を出した枚数ぶん次の手番を飛ばします。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "sevenGiveEnabled",
+    "label": "7渡し",
+    "description": "7を出した枚数ぶん、次のプレイヤーへ手札を渡せます。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "tenTrashEnabled",
+    "label": "10捨て",
+    "description": "10を出した枚数ぶん、自分の手札を追加で捨てられます。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "nineReverseEnabled",
+    "label": "9リバース",
+    "description": "9を出すと手番の進行方向が反転します。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": true
+  },
+  {
+    "key": "queenReverseEnabled",
+    "label": "Qリバース",
+    "description": "Qを出すと手番の進行方向が反転します。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "kingSkipEnabled",
+    "label": "Kスキップ",
+    "description": "Kを出した枚数ぶん次の手番を飛ばします。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "ambulanceEnabled",
+    "label": "救急車(99車)",
+    "description": "9を2枚以上まとめて出すと場を流します。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "rokurokubiEnabled",
+    "label": "ろくろ首",
+    "description": "6を2枚以上まとめて出すと場を流します。",
+    "category": "テンポ効果",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "fourCutEnabled",
+    "label": "4??",
+    "description": "4????????????????4?????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "sandstormEnabled",
+    "label": "??",
+    "description": "3?3????????????????????????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "queenCarEnabled",
+    "label": "QQ?",
+    "description": "Q?2?????????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "coupDetatEnabled",
+    "label": "?????",
+    "description": "9?3??????????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "sixCutEnabled",
+    "label": "6??",
+    "description": "????6?????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "sixReturnEnabled",
+    "label": "6??",
+    "description": "11?????6??????????11?????????????",
+    "category": "?????????",
+    "type": "boolean",
+    "default": false
+  },
+  {
+    "key": "jokerCount",
+    "label": "ジョーカー枚数",
+    "description": "山札に入れるジョーカー枚数です。",
+    "category": "卓設定",
+    "type": "select",
+    "default": 2,
+    "options": [
+      {
+        "label": "0枚",
+        "value": 0
+      },
+      {
+        "label": "1枚",
+        "value": 1
+      },
+      {
+        "label": "2枚",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "key": "starterRule",
+    "label": "開始プレイヤー",
+    "description": "ラウンド開始時に先手になる基準です。",
+    "category": "卓設定",
+    "type": "select",
+    "default": "diamond3",
+    "options": [
+      {
+        "label": "♦3持ち",
+        "value": "diamond3"
+      },
+      {
+        "label": "♠3持ち",
+        "value": "spade3"
+      },
+      {
+        "label": "♣3持ち",
+        "value": "club3"
+      },
+      {
+        "label": "♥3持ち",
+        "value": "heart3"
+      },
+      {
+        "label": "前回最下位",
+        "value": "lastPlace"
+      },
+      {
+        "label": "ランダム",
+        "value": "random"
+      }
+    ]
+  }
+]
