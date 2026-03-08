@@ -1,4 +1,4 @@
-const { allowMethods, readJson, sendJson } = require("../lib/http");
+const { allowMethods, readJson, sendError, sendJson } = require("../lib/http");
 const { getRoom, saveRoom } = require("../lib/storage");
 const { getStateForClient, playTurn, runBotsUntilHuman } = require("../lib/game");
 
@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
 
     const room = await getRoom(roomId);
     if (!room) {
-      sendJson(res, 404, { error: "部屋が見つかりません。" });
+      sendJson(res, 404, { error: "Room not found." });
       return;
     }
 
@@ -27,6 +27,7 @@ module.exports = async function handler(req, res) {
       state: getStateForClient(room, clientId)
     });
   } catch (error) {
-    sendJson(res, 400, { error: error.message || "カードを出せませんでした。" });
+    sendError(res, error, 400, "Failed to play cards.");
   }
 };
+

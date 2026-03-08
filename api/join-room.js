@@ -1,4 +1,4 @@
-const { allowMethods, readJson, sendJson } = require("../lib/http");
+const { allowMethods, readJson, sendError, sendJson } = require("../lib/http");
 const { getRoom, saveRoom } = require("../lib/storage");
 const { getStateForClient, joinRoom, normalizeNickname } = require("../lib/game");
 
@@ -14,13 +14,13 @@ module.exports = async function handler(req, res) {
     const nickname = normalizeNickname(body.nickname);
 
     if (!roomId || !clientId) {
-      sendJson(res, 400, { error: "roomId と clientId が必要です。" });
+      sendJson(res, 400, { error: "roomId and clientId are required." });
       return;
     }
 
     const room = await getRoom(roomId);
     if (!room) {
-      sendJson(res, 404, { error: "部屋が見つかりません。" });
+      sendJson(res, 404, { error: "Room not found." });
       return;
     }
 
@@ -31,6 +31,7 @@ module.exports = async function handler(req, res) {
       state: getStateForClient(room, clientId)
     });
   } catch (error) {
-    sendJson(res, 400, { error: error.message || "参加に失敗しました。" });
+    sendError(res, error, 400, "Failed to join room.");
   }
 };
+
