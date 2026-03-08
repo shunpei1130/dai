@@ -18,7 +18,8 @@ const state = {
   playAnimation: null,
   playAnimationTimer: null,
   pilePulse: false,
-  pilePulseTimer: null
+  pilePulseTimer: null,
+  messageTimer: null
 };
 
 const CARD_RANK_LABELS = {
@@ -106,9 +107,28 @@ async function api(path, body = null, method = "POST") {
   }
   return payload;
 }
-function showMessage(message) {
+function showMessage(message, { autoHide = true } = {}) {
   state.message = message;
+
+  if (state.messageTimer) {
+    clearTimeout(state.messageTimer);
+    state.messageTimer = null;
+  }
+
   render();
+
+  if (!message || !autoHide) {
+    return;
+  }
+
+  state.messageTimer = setTimeout(() => {
+    if (!state.message) {
+      return;
+    }
+    state.message = "";
+    state.messageTimer = null;
+    render();
+  }, 2200);
 }
 
 function clearSelections() {
@@ -176,7 +196,15 @@ function triggerPilePulse() {
 }
 
 function setRoomState(nextRoom, { animateCombo = true } = {}) {
+  const currentRevision = Number(state.room?.revision ?? -1);
+  const nextRevision = Number(nextRoom?.revision ?? -1);
+  if (state.room && nextRoom && Number.isFinite(currentRevision) && Number.isFinite(nextRevision) && nextRevision < currentRevision) {
+    return false;
+  }
+
   const previousCombo = comboSignature(state.room?.game?.currentCombo);
+  const previousRevision = state.room?.revision;
+  const previousRequiresJoin = state.room?.requiresJoin;
   const nextCombo = comboSignature(nextRoom?.game?.currentCombo);
 
   state.room = nextRoom;
@@ -184,6 +212,8 @@ function setRoomState(nextRoom, { animateCombo = true } = {}) {
   if (animateCombo && nextCombo && nextCombo !== previousCombo) {
     triggerPilePulse();
   }
+
+  return previousRevision !== nextRoom?.revision || previousRequiresJoin !== nextRoom?.requiresJoin;
 }
 
 function triggerPlayAnimation(cards) {
@@ -820,17 +850,23 @@ async function refreshState(silent = false) {
   }
 
   try {
-    const payload = await api(`/api/state?roomId=${encodeURIComponent(state.roomId)}&clientId=${encodeURIComponent(state.clientId)}`, null, "GET");
-    setRoomState(payload.state);
+    const previousSelectionSize = state.selected.size;
+    const roomChanged = setRoomState(
+      (await api(`/api/state?roomId=${encodeURIComponent(state.roomId)}&clientId=${encodeURIComponent(state.clientId)}`, null, "GET")).state
+    );
     normalizeSelectionAgainstHand();
     queueFlashes();
     if (!silent) {
       state.message = "";
+      render();
+      return;
     }
-    render();
+
+    if (roomChanged || previousSelectionSize !== state.selected.size) {
+      render();
+    }
   } catch (error) {
     showMessage(error.message);
-    render();
   }
 }
 
@@ -1073,6 +1109,9 @@ window.addEventListener("beforeunload", () => {
   }
   if (state.pilePulseTimer) {
     clearTimeout(state.pilePulseTimer);
+  }
+  if (state.messageTimer) {
+    clearTimeout(state.messageTimer);
   }
 });
 
