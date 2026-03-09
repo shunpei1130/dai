@@ -1,0 +1,6 @@
+*** Begin Patch
+*** Update File: index.html
+@@
+-    <title>Daifugo Arena</title>
++    <title>‘å•x‹ƒAƒŠ[ƒi</title>
+*** End Patch

@@ -1,4 +1,42 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/app.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/styles.css",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        }
+      ]
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 const { allowMethods, readJson, sendError, sendJson } = require("../lib/http");
 const { getRoom, saveRoom } = require("../lib/storage");
-const { getStateForClient, playTurn, runBotsUntilHuman } = require("../lib/game");
+const { getStateForClient, playTurn } = require("../lib/game");
 
 module.exports = async function handler(req, res) {
   if (!allowMethods(req, res, ["POST"])) {
@@ -20,7 +20,6 @@ module.exports = async function handler(req, res) {
     }
 
     playTurn(room, clientId, cardIds);
-    runBotsUntilHuman(room);
     await saveRoom(room);
 
     sendJson(res, 200, {
@@ -30,4 +29,3 @@ module.exports = async function handler(req, res) {
     sendError(res, error, 400, "Failed to play cards.");
   }
 };
-

@@ -1,0 +1,14 @@
+﻿root = true
+[*]
+end_of_line = lf
+insert_final_newline = true
+[*.js]
+charset = utf-8-bom
+[*.json]
+charset = utf-8-bom
+[*.html]
+charset = utf-8-bom
+[*.css]
+charset = utf-8-bom
+[*.md]
+charset = utf-8-bom
